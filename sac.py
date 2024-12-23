@@ -17,15 +17,12 @@ BATCH_SIZE = 256
 
 
 class Policy(nn.Module):
-    def __init__(self, state_dim, action_dim, seq_len, noise_color="pink", hidden_dim=256):
-        """
-        seq_len = max episode steps
-        """
+    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_color="pink", noise_seq_len=1e4):
         super(Policy, self).__init__()
         self.net = MLP(state_dim, hidden_dim, hidden_dim)
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
-        self.gen = ColoredNoiseProcess(color=noise_color, size=(action_dim, seq_len))
+        self.gen = ColoredNoiseProcess(color=noise_color, size=(action_dim, noise_seq_len))
 
     def forward(self, state):
         x = self.net(state)
@@ -48,13 +45,13 @@ class Policy(nn.Module):
 
 # Soft Actor-Critic Agent
 class SACAgent:
-    def __init__(self, state_dim, action_dim, max_seq_len=500):
-        self.actor = Policy(state_dim, action_dim, max_seq_len)
+    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_hidden_dim=64, noise_color="pink", noise_seq_len=1e4):
+        self.actor = Policy(state_dim, action_dim, noise_hidden_dim, noise_color=noise_color, noise_seq_len=noise_seq_len)
         # self.actor = RealNVPPolicy(state_dim, action_dim, 4)
-        self.q1 = MLP(state_dim + action_dim, 1)
-        self.q2 = MLP(state_dim + action_dim, 1)
-        self.q1_target = MLP(state_dim + action_dim, 1)
-        self.q2_target = MLP(state_dim + action_dim, 1)
+        self.q1 = MLP(state_dim + action_dim, 1, hidden_dim)
+        self.q2 = MLP(state_dim + action_dim, 1, hidden_dim)
+        self.q1_target = MLP(state_dim + action_dim, 1, hidden_dim)
+        self.q2_target = MLP(state_dim + action_dim, 1, hidden_dim)
 
         self.q1_target.load_state_dict(self.q1.state_dict())
         self.q2_target.load_state_dict(self.q2.state_dict())
