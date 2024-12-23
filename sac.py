@@ -17,12 +17,13 @@ BATCH_SIZE = 256
 
 
 class Policy(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_color="pink", noise_seq_len=1e4):
+    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_color="pink", noise_seq_len=int(1e4), device="cpu"):
         super(Policy, self).__init__()
         self.net = MLP(state_dim, hidden_dim, hidden_dim)
         self.mean = nn.Linear(hidden_dim, action_dim)
         self.log_std = nn.Linear(hidden_dim, action_dim)
         self.gen = ColoredNoiseProcess(color=noise_color, size=(action_dim, noise_seq_len))
+        self.device = device
 
     def forward(self, state):
         x = self.net(state)
@@ -33,7 +34,7 @@ class Policy(nn.Module):
     def sample(self, state):
         mean, log_std = self(state)
         std = log_std.exp()
-        cn_sample = torch.tensor(self.gen.sample()).float()
+        cn_sample = torch.tensor(self.gen.sample()).float().to(self.device)
         dist = Normal(mean, std)
         # action = dist.rsample()  # Reparameterization trick
         action = mean + std * cn_sample
@@ -45,24 +46,25 @@ class Policy(nn.Module):
 
 # Soft Actor-Critic Agent
 class SACAgent:
-    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_hidden_dim=64, noise_color="pink", noise_seq_len=1e4):
-        self.actor = Policy(state_dim, action_dim, noise_hidden_dim, noise_color=noise_color, noise_seq_len=noise_seq_len)
+    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_hidden_dim=64, noise_color="pink", noise_seq_len=int(1e4), device="cpu"):
+        self.actor = Policy(state_dim, action_dim, noise_hidden_dim, noise_color=noise_color, noise_seq_len=noise_seq_len, device=device).to(device)
         # self.actor = RealNVPPolicy(state_dim, action_dim, 4)
-        self.q1 = MLP(state_dim + action_dim, 1, hidden_dim)
-        self.q2 = MLP(state_dim + action_dim, 1, hidden_dim)
-        self.q1_target = MLP(state_dim + action_dim, 1, hidden_dim)
-        self.q2_target = MLP(state_dim + action_dim, 1, hidden_dim)
+        self.q1 = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
+        self.q2 = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
+        self.q1_target = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
+        self.q2_target = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
 
         self.q1_target.load_state_dict(self.q1.state_dict())
         self.q2_target.load_state_dict(self.q2.state_dict())
 
         self.q_optimizer = optim.Adam(list(self.q1.parameters()) + list(self.q2.parameters()), lr=LR)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=LR)
-        self.log_alpha = torch.tensor([0.0], requires_grad=True)
+        self.log_alpha = torch.tensor([0.0], requires_grad=True, device=device)
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=LR)
 
         self.target_entropy = TARGET_ENTROPY
         self.alpha = ALPHA
+        self.device = device
 
     def update(self, replay_buffer):
         if len(replay_buffer.buffer) < BATCH_SIZE:
@@ -70,11 +72,11 @@ class SACAgent:
 
         batch = replay_buffer.sample(BATCH_SIZE)
         states, actions, rewards, next_states, dones = zip(*batch)
-        states = torch.FloatTensor(np.array(states))
-        actions = torch.FloatTensor(np.array(actions))
-        rewards = torch.FloatTensor(rewards).unsqueeze(1)
-        next_states = torch.FloatTensor(np.array(next_states))
-        dones = torch.FloatTensor(dones).unsqueeze(1)
+        states = torch.FloatTensor(np.array(states)).to(self.device)
+        actions = torch.FloatTensor(np.array(actions)).to(self.device)
+        rewards = torch.FloatTensor(rewards).unsqueeze(1).to(self.device)
+        next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
+        dones = torch.FloatTensor(dones).unsqueeze(1).to(self.device)
 
         with torch.no_grad():
             next_actions, next_log_probs = self.actor(next_states)

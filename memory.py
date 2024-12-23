@@ -3,7 +3,7 @@ import numpy as np
 
 # class to store transitions
 class ReplayBuffer:
-    def __init__(self, size=1e5):
+    def __init__(self, size=int(1e5)):
         self.buffer = []
         self.max_size = size
         self.ptr = 0
