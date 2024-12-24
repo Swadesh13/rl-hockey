@@ -54,17 +54,20 @@ class SACAgent:
         noise_color="pink",
         noise_seq_len=int(1e4),
         target_update_steps=1,
+        actor_nvp=False,
         device="cpu",
     ):
-        self.actor = GaussianPolicy(
-            state_dim,
-            action_dim,
-            noise_hidden_dim,
-            noise_color=noise_color,
-            noise_seq_len=noise_seq_len,
-            device=device,
-        ).to(device)
-        # self.actor = RealNVPPolicy(state_dim, action_dim, 4)
+        if actor_nvp:
+            self.actor = RealNVPPolicy(state_dim, action_dim, 4, noise_color, noise_seq_len, device=device).to(device)
+        else:
+            self.actor = GaussianPolicy(
+                state_dim,
+                action_dim,
+                noise_hidden_dim,
+                noise_color=noise_color,
+                noise_seq_len=noise_seq_len,
+                device=device,
+            ).to(device)
         self.q1 = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
         self.q2 = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
         self.q1_target = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
@@ -99,7 +102,7 @@ class SACAgent:
 
         if isinstance(memory, PrioritizedMemory):
             batch, indices, weights = memory.sample(BATCH_SIZE)
-            weights = torch.tensor(weights).to(self.device)
+            weights = torch.tensor(weights).unsqueeze(-1).to(self.device)
         else:
             batch = memory.sample(BATCH_SIZE)
             weights = 1.0
