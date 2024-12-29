@@ -1,160 +1,151 @@
 import numpy as np
-import torch
-from torch import nn
-from torch import optim
-from torch.distributions.normal import Normal
-from feedforward import MLP
-from noise import ColoredNoiseProcess
-from norm_flows import RealNVPPolicy
-from memory import PrioritizedMemory
-
-GAMMA = 0.99
-TAU = 0.005
-LR = 3e-4
-ALPHA = 0.2
-BUFFER_SIZE = int(1e5)
-BATCH_SIZE = 256
+import torch as th
+from torch.nn import functional as F
+from noise import PinkNoiseDist
+from memory import ExperienceMemory, PrioritizedMemory
+from hyperparams import ALPHA, GAMMA, LR, BATCH_SIZE, TAU, BUFFER_SIZE, POLICY_NET_ARCH
+from stable_baselines3 import SAC
+from stable_baselines3.common.utils import polyak_update
+from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
+# from norm_flows import RealNVPPolicy
 
 
-class GaussianPolicy(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim=256, noise_color="pink", noise_seq_len=int(1e4), device="cpu"):
-        super(GaussianPolicy, self).__init__()
-        self.net = MLP(state_dim, hidden_dim, hidden_dim)
-        self.mean = nn.Linear(hidden_dim, action_dim)
-        self.log_std = nn.Linear(hidden_dim, action_dim)
-        self.gen = ColoredNoiseProcess(color=noise_color, size=(action_dim, noise_seq_len))
-        self.device = device
+class SAC_PM(SAC):
+    """
+    Updated training function only in case PrioritizedMemory is used
+    """
 
-    def forward(self, state):
-        x = self.net(state)
-        mean = self.mean(x)
-        log_std = self.log_std(x).clamp(-20, 2)
-        return mean, log_std
+    def train(self, gradient_steps: int, batch_size: int = 64) -> None:
+        # Switch to train mode (this affects batch norm / dropout)
+        self.policy.set_training_mode(True)
+        # Update optimizers learning rate
+        optimizers = [self.actor.optimizer, self.critic.optimizer]
+        if self.ent_coef_optimizer is not None:
+            optimizers += [self.ent_coef_optimizer]
 
-    def sample(self, state):
-        mean, log_std = self(state)
-        std = log_std.exp()
-        cn_sample = torch.tensor(self.gen.sample()).float().to(self.device)
-        dist = Normal(mean, std)
-        # z = dist.rsample()  # Reparameterization trick
-        z = mean + std * cn_sample
-        action = torch.tanh(z)
-        log_prob = (dist.log_prob(z) - torch.log(1 - action.pow(2) + 1e-6)).sum(dim=-1, keepdim=True)
-        return action, log_prob
+        # Update learning rate according to lr schedule
+        self._update_learning_rate(optimizers)
+
+        ent_coef_losses, ent_coefs = [], []
+        actor_losses, critic_losses = [], []
+
+        for gradient_step in range(gradient_steps):
+            # Sample replay buffer
+            replay_data, indices = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
+
+            # We need to sample because `log_std` may have changed between two gradient steps
+            if self.use_sde:
+                self.actor.reset_noise()
+
+            # Action by the current actor for the sampled state
+            actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
+            log_prob = log_prob.reshape(-1, 1)
+
+            ent_coef_loss = None
+            if self.ent_coef_optimizer is not None and self.log_ent_coef is not None:
+                # Important: detach the variable from the graph
+                # so we don't change it with other losses
+                # see https://github.com/rail-berkeley/softlearning/issues/60
+                ent_coef = th.exp(self.log_ent_coef.detach())
+                ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+                ent_coef_losses.append(ent_coef_loss.item())
+            else:
+                ent_coef = self.ent_coef_tensor
+
+            ent_coefs.append(ent_coef.item())
+
+            # Optimize entropy coefficient, also called
+            # entropy temperature or alpha in the paper
+            if ent_coef_loss is not None and self.ent_coef_optimizer is not None:
+                self.ent_coef_optimizer.zero_grad()
+                ent_coef_loss.backward()
+                self.ent_coef_optimizer.step()
+
+            with th.no_grad():
+                # Select action according to policy
+                next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
+                # Compute the next Q values: min over all critics targets
+                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
+                # add entropy term
+                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
+                # td error + entropy term
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+
+            # Get current Q-values estimates for each critic network
+            # using action from the replay buffer
+            current_q_values = self.critic(replay_data.observations, replay_data.actions)
+
+            with th.no_grad():
+                # print(current_q_values)
+                td_error = th.abs(current_q_values[np.random.choice(len(current_q_values), 1)[0]] - target_q_values)
+            self.replay_buffer.update_priorities(indices, td_error)
+
+            # Compute critic loss
+            critic_loss = 0.5 * sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
+            assert isinstance(critic_loss, th.Tensor)  # for type checker
+            critic_losses.append(critic_loss.item())  # type: ignore[union-attr]
+
+            # Optimize the critic
+            self.critic.optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic.optimizer.step()
+
+            # Compute actor loss
+            # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
+            # Min over all critic networks
+            q_values_pi = th.cat(self.critic(replay_data.observations, actions_pi), dim=1)
+            min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
+            actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+            actor_losses.append(actor_loss.item())
+
+            # Optimize the actor
+            self.actor.optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor.optimizer.step()
+
+            # Update target networks
+            if gradient_step % self.target_update_interval == 0:
+                polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
+                # Copy running stats, see GH issue #996
+                polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
+
+        self._n_updates += gradient_steps
+
+        self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        self.logger.record("train/ent_coef", np.mean(ent_coefs))
+        self.logger.record("train/actor_loss", np.mean(actor_losses))
+        self.logger.record("train/critic_loss", np.mean(critic_losses))
+        if len(ent_coef_losses) > 0:
+            self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
 
-# Soft Actor-Critic Agent
-class SACAgent:
-    def __init__(
-        self,
-        state_dim,
-        action_dim,
-        hidden_dim=256,
-        noise_hidden_dim=64,
-        noise_color="pink",
-        noise_seq_len=int(1e4),
-        target_update_steps=1,
-        actor_nvp=False,
-        device="cpu",
-    ):
-        if actor_nvp:
-            self.actor = RealNVPPolicy(state_dim, action_dim, 4, noise_color, noise_seq_len, device=device).to(device)
-        else:
-            self.actor = GaussianPolicy(
-                state_dim,
-                action_dim,
-                noise_hidden_dim,
-                noise_color=noise_color,
-                noise_seq_len=noise_seq_len,
-                device=device,
-            ).to(device)
-        self.q1 = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
-        self.q2 = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
-        self.q1_target = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
-        self.q2_target = MLP(state_dim + action_dim, 1, hidden_dim).to(device)
-
-        self.q1_target.load_state_dict(self.q1.state_dict())
-        self.q2_target.load_state_dict(self.q2.state_dict())
-
-        self.q_optimizer = optim.Adam(list(self.q1.parameters()) + list(self.q2.parameters()), lr=LR)
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=LR)
-        self.log_alpha = torch.tensor([0.0], requires_grad=True, device=device)
-        self.alpha_optimizer = optim.Adam([self.log_alpha], lr=LR)
-
-        self.target_entropy = -float(action_dim)
-        self.alpha = ALPHA
-        self.device = device
-        self.target_update_steps = target_update_steps
-        self.update_steps = 0
-
-    def act(self, state):
-        if not isinstance(state, torch.FloatTensor):
-            state = torch.FloatTensor(state).to(self.device)
-        if len(state.shape) == 1:
-            state = state.unsqueeze(0)
-        return self.actor.sample(state)
-
-    def update(self, memory):
-        if len(memory.buffer) < BATCH_SIZE:
-            return
-
-        self.update_steps += 1
-
-        if isinstance(memory, PrioritizedMemory):
-            batch, indices, weights = memory.sample(BATCH_SIZE)
-            weights = torch.tensor(weights).unsqueeze(-1).to(self.device)
-        else:
-            batch = memory.sample(BATCH_SIZE)
-            weights = 1.0
-
-        states, actions, rewards, next_states, dones = zip(*batch)
-        states = torch.FloatTensor(np.array(states)).to(self.device)
-        actions = torch.FloatTensor(np.array(actions)).to(self.device)
-        rewards = torch.FloatTensor(rewards).unsqueeze(1).to(self.device)
-        next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
-        dones = torch.FloatTensor(dones).unsqueeze(1).to(self.device)
-
-        with torch.no_grad():
-            next_actions, next_log_probs = self.actor.sample(next_states)
-            target_q1 = self.q1_target(torch.cat([next_states, next_actions], dim=1))
-            target_q2 = self.q2_target(torch.cat([next_states, next_actions], dim=1))
-            target_q = torch.min(target_q1, target_q2) - self.alpha * next_log_probs
-            target_q = rewards + (1 - dones) * GAMMA * target_q
-
-        current_q1 = self.q1(torch.cat([states, actions], dim=1))
-        current_q2 = self.q2(torch.cat([states, actions], dim=1))
-        q_loss = ((current_q1 - target_q).pow(2) * weights).mean() + ((current_q2 - target_q).pow(2) * weights).mean()
-        td_error = torch.abs([current_q1, current_q2][np.random.choice([0, 1], 1)[0]].detach() - target_q)
-
-        self.q_optimizer.zero_grad()
-        q_loss.backward()
-        self.q_optimizer.step()
-
-        actions_sampled, log_probs = self.actor.sample(states)
-        q1 = self.q1(torch.cat([states, actions_sampled], dim=1))
-        q2 = self.q2(torch.cat([states, actions_sampled], dim=1))
-        actor_loss = ((self.alpha * log_probs - torch.min(q1, q2)) * weights).mean()
-
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-
-        alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach() * weights).mean()
-        self.alpha_optimizer.zero_grad()
-        alpha_loss.backward()
-        self.alpha_optimizer.step()
-
-        self.alpha = self.log_alpha.exp().item()
-
-        # Update target networks
-        if self.update_steps % self.target_update_steps == 0:
-            with torch.no_grad():
-                for param, target_param in zip(self.q1.parameters(), self.q1_target.parameters()):
-                    target_param.data.mul_(1 - TAU)
-                    target_param.data.add_(TAU * param.data)
-                for param, target_param in zip(self.q2.parameters(), self.q2_target.parameters()):
-                    target_param.data.mul_(1 - TAU)
-                    target_param.data.add_(TAU * param.data)
-
-        if isinstance(memory, PrioritizedMemory):
-            memory.update_priorities(indices, td_error.cpu().numpy().flatten().tolist())
+def get_SAC_agent(env, noise=None, prioritized_memory=False, tensorboard_log=None):
+    kwargs = {}
+    if prioritized_memory:
+        agent = SAC_PM
+        kwargs["replay_buffer_class"] = PrioritizedMemory
+    else:
+        agent = SAC
+        kwargs["replay_buffer_class"] = ExperienceMemory
+    if noise == "brownian":
+        kwargs["action_noise"] = OrnsteinUhlenbeckActionNoise(np.zeros(env.action_space.shape[0]), np.zeros(env.action_space.shape[0]) + 0.5)
+    agent = agent(
+        "MlpPolicy",
+        env,
+        LR,
+        BUFFER_SIZE,
+        batch_size=BATCH_SIZE,
+        tau=TAU,
+        gamma=GAMMA,
+        ent_coef=f"auto_{ALPHA}",
+        train_freq=(1, "episode"),
+        learning_starts=10,
+        gradient_steps=-1,
+        tensorboard_log=tensorboard_log,
+        policy_kwargs={"net_arch": POLICY_NET_ARCH},
+        **kwargs,
+    )
+    if noise == "pink":
+        agent.actor.action_dist = PinkNoiseDist(250, env.action_space.shape[0])
+    return agent

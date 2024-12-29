@@ -1,74 +1,54 @@
 import numpy as np
+from stable_baselines3.common.buffers import ReplayBuffer
 
 
-# class to store transitions
-class Memory:
-    def __init__(self, size=int(1e5)):
-        self.buffer = []
-        self.max_size = size
-        self.ptr = 0
-
-    def add(self, transition):
-        if len(self.buffer) < self.max_size:
-            self.buffer.append(transition)
-        else:
-            self.buffer[self.ptr] = transition
-        self.ptr = (self.ptr + 1) % self.max_size
-
-    def sample(self, batch_size):
-        indices = np.random.choice(len(self.buffer), batch_size)
-        return [self.buffer[idx] for idx in indices]
-
-
-class ExperienceMemory(Memory):
-    def __init__(self, size=int(1e5)):
-        super().__init__(size)
+class ExperienceMemory(ReplayBuffer):
+    def __init__(self, size, obs_space, ac_space, *args, **kwargs):
+        super().__init__(size, obs_space, ac_space, *args, **kwargs)
         self.experience = np.array([])
 
-    def add(self, transition):
-        if len(self.buffer) < self.max_size:
-            self.buffer.append(transition)
-            self.experience = np.append(self.experience, 1)
+    def add(self, *args, **kwargs):
+        super().add(*args, **kwargs)
+        if self.full:
+            self.experience[(self.pos - 1) % self.buffer_size] = 1
         else:
-            self.buffer[self.ptr] = transition
-            self.experience[self.ptr] = 1
-        self.ptr = (self.ptr + 1) % self.max_size
+            self.experience = np.append(self.experience, 1)
 
-    def sample(self, batch_size):
+    def sample(self, batch_size: int, env=None):
         experience_weight = 1 / self.experience
-        indices = np.random.choice(len(self.buffer), batch_size, False, experience_weight / experience_weight.sum())
-        self.experience[indices] += 1
-        return [self.buffer[idx] for idx in indices]
+        upper_bound = self.buffer_size if self.full else self.pos
+        batch_inds = np.random.choice(upper_bound, batch_size, batch_size > upper_bound, experience_weight / experience_weight.sum())
+        self.experience[batch_inds] += 1
+        return self._get_samples(batch_inds, env=env)
 
 
-class PrioritizedMemory(Memory):
-    def __init__(self, size=int(1e5), alpha=0.6):
-        super().__init__(size)
+class PrioritizedMemory(ReplayBuffer):
+    def __init__(self, size, obs_space, ac_space, alpha=0.6, *args, **kwargs):
+        super().__init__(size, obs_space, ac_space, *args, **kwargs)
         self.alpha = alpha
         self.priorities = []
 
-    def add(self, transition, priority=1.0):
-        max_priority = max(self.priorities) if self.buffer else priority
-        if len(self.buffer) < self.max_size:
-            self.buffer.append(transition)
-            self.priorities.append(max_priority)
+    def add(self, *args, **kwargs):
+        super().add(*args, **kwargs)
+        max_priority = max(self.priorities) if len(self.priorities) else 1.0
+        if self.full:
+            self.priorities[(self.pos - 1) % self.buffer_size] = max_priority
         else:
-            self.buffer[self.ptr] = transition
-            self.priorities[self.ptr] = max_priority
-        self.ptr = (self.ptr + 1) % self.max_size
+            self.priorities.append(max_priority)
 
-    def sample(self, batch_size, beta=0.4):
+    def sample(self, batch_size, env=None, beta=0.4):
         priorities = np.array(self.priorities) ** self.alpha
         probs = priorities / priorities.sum()
-        indices = np.random.choice(len(self.buffer), batch_size, p=probs)
-        samples = [self.buffer[idx] for idx in indices]
+        upper_bound = self.buffer_size if self.full else self.pos
+        batch_inds = np.random.choice(upper_bound, batch_size, batch_size > upper_bound, probs)
+        samples = self._get_samples(batch_inds, env=env)
 
         # Compute importance-sampling weights
-        total = len(self.buffer)
-        weights = (total * probs[indices]) ** (-beta)
-        weights /= weights.max()
-        return samples, indices, weights
+        # total = upper_bound
+        # weights = (total * probs[indices]) ** (-beta)
+        # weights /= weights.max()
+        return samples, batch_inds  # , weights
 
     def update_priorities(self, indices, priorities):
         for idx, priority in zip(indices, priorities):
-            self.priorities[idx] = priority
+            self.priorities[idx] = np.array(priority)[0]

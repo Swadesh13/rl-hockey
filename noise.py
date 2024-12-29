@@ -1,42 +1,133 @@
+# Implementation from https://github.com/martius-lab/pink-noise-rl
+
 import numpy as np
+import torch as th
+from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution
+from stable_baselines3.common.noise import ActionNoise
 
 
-def noise_psd(N, psd=lambda f: 1):
-    X_white = np.fft.rfft(np.random.randn(N))
-    S = psd(np.fft.rfftfreq(N))
-    # Normalize S
-    S = S / np.sqrt(np.mean(S**2))
-    X_shaped = X_white * S
-    return np.fft.irfft(X_shaped)
+def powerlaw_psd_gaussian(exponent, size, fmin=0, rng=None):
+    """Gaussian (1/f)**beta noise.
+
+    Based on the algorithm in:
+    Timmer, J. and Koenig, M.:
+    On generating power law noise.
+    Astron. Astrophys. 300, 707-710 (1995)
+
+    Normalised to unit variance
+
+    Parameters:
+    -----------
+
+    exponent : float
+        The power-spectrum of the generated noise is proportional to
+
+        S(f) = (1 / f)**beta
+        flicker / pink noise:   exponent beta = 1
+        brown noise:            exponent beta = 2
+
+        Furthermore, the autocorrelation decays proportional to lag**-gamma
+        with gamma = 1 - beta for 0 < beta < 1.
+        There may be finite-size issues for beta close to one.
+
+    shape : int or iterable
+        The output has the given shape, and the desired power spectrum in
+        the last coordinate. That is, the last dimension is taken as time,
+        and all other components are independent.
+
+    fmin : float, optional
+        Low-frequency cutoff.
+        Default: 0 corresponds to original paper.
+
+        The power-spectrum below fmin is flat. fmin is defined relative
+        to a unit sampling rate (see numpy's rfftfreq). For convenience,
+        the passed value is mapped to max(fmin, 1/samples) internally
+        since 1/samples is the lowest possible finite frequency in the
+        sample. The largest possible value is fmin = 0.5, the Nyquist
+        frequency. The output for this value is white noise.
+
+    rng : np.random.Generator, optional
+        Random number generator (for reproducibility). If not passed, a new
+        random number generator is created by calling
+        `np.random.default_rng()`.
 
 
-def PSDGenerator(f):
-    return lambda N: noise_psd(N, f)
+    Returns
+    -------
+    out : array
+        The samples.
 
 
-@PSDGenerator
-def white_noise(f):
-    return 1
+    Examples:
+    ---------
 
+    >>> # generate 1/f noise == pink noise == flicker noise
+    >>> import colorednoise as cn
+    >>> y = cn.powerlaw_psd_gaussian(1, 5)
+    """
 
-@PSDGenerator
-def blue_noise(f):
-    return np.sqrt(f)
+    # Make sure size is a list so we can iterate it and assign to it.
+    try:
+        size = list(size)
+    except TypeError:
+        size = [size]
 
+    # The number of samples in each time series
+    samples = size[-1]
 
-@PSDGenerator
-def violet_noise(f):
-    return f
+    # Calculate Frequencies (we asume a sample rate of one)
+    # Use fft functions for real output (-> hermitian spectrum)
+    f = np.fft.rfftfreq(samples)
 
+    # Validate / normalise fmin
+    if 0 <= fmin <= 0.5:
+        fmin = max(fmin, 1.0 / samples)  # Low frequency cutoff
+    else:
+        raise ValueError("fmin must be chosen between 0 and 0.5.")
 
-@PSDGenerator
-def brownian_noise(f):
-    return 1 / np.where(f == 0, float("inf"), f)
+    # Build scaling factors for all frequencies
+    s_scale = f
+    ix = np.sum(s_scale < fmin)  # Index of the cutoff
+    if ix and ix < len(s_scale):
+        s_scale[:ix] = s_scale[ix]
+    s_scale = s_scale ** (-exponent / 2.0)
 
+    # Calculate theoretical output standard deviation from scaling
+    w = s_scale[1:].copy()
+    w[-1] *= (1 + (samples % 2)) / 2.0  # correct f = +-0.5
+    sigma = 2 * np.sqrt(np.sum(w**2)) / samples
 
-@PSDGenerator
-def pink_noise(f):
-    return 1 / np.where(f == 0, float("inf"), np.sqrt(f))
+    # Adjust size to generate one Fourier component per frequency
+    size[-1] = len(f)
+
+    # Add empty dimension(s) to broadcast s_scale along last
+    # dimension of generated random power + phase (below)
+    dims_to_add = len(size) - 1
+    s_scale = s_scale[(None,) * dims_to_add + (Ellipsis,)]
+
+    # Generate scaled random power + phase
+    if rng is None:
+        rng = np.random.default_rng()
+    sr = rng.normal(scale=s_scale, size=size)
+    si = rng.normal(scale=s_scale, size=size)
+
+    # If the signal length is even, frequencies +/- 0.5 are equal
+    # so the coefficient must be real.
+    if not (samples % 2):
+        si[..., -1] = 0
+        sr[..., -1] *= np.sqrt(2)  # Fix magnitude
+
+    # Regardless of signal length, the DC component must be real
+    si[..., 0] = 0
+    sr[..., 0] *= np.sqrt(2)  # Fix magnitude
+
+    # Combine power + corrected phase to Fourier components
+    s = sr + 1j * si
+
+    # Transform to real time series & scale to unit variance
+    y = np.fft.irfft(s, n=samples, axis=-1) / sigma
+
+    return y
 
 
 class ColoredNoiseProcess:
@@ -53,8 +144,8 @@ class ColoredNoiseProcess:
         Reset the buffer with a new time series.
     """
 
-    def __init__(self, size, color="pink", scale=1, max_period=None, rng=None):
-        """Infinite white noise process.
+    def __init__(self, beta, size, scale=1, max_period=None, rng=None):
+        """Infinite colored noise process.
 
         Implemented as a buffer: every `size[-1]` samples, a cut to a new time series starts. As this cut influences
         the PSD of the combined signal, the maximum period (1 / low-frequency cutoff) can be specified.
@@ -66,7 +157,6 @@ class ColoredNoiseProcess:
         size : int or tuple of int
             Shape of the sampled colored noise signals. The last dimension (`size[-1]`) specifies the time range, and
             is thus ths maximum possible correlation length of the combined signal.
-            Currently implemented for size like (a, b)
         scale : int, optional, by default 1
             Scale parameter with which samples are multiplied
         max_period : float, optional, by default None
@@ -76,7 +166,7 @@ class ColoredNoiseProcess:
             Random number generator (for reproducibility). If not passed, a new random number generator is created by
             calling `np.random.default_rng()`.
         """
-        self.color = color
+        self.beta = beta
         if max_period is None:
             self.minimum_frequency = 0
         else:
@@ -96,10 +186,7 @@ class ColoredNoiseProcess:
 
     def reset(self):
         """Reset the buffer with a new time series."""
-        if self.color.lower() == "white":
-            self.buffer = np.stack([white_noise(self.time_steps) for _ in range(self.size[0])], axis=0)
-        elif self.color.lower() == "pink":
-            self.buffer = np.stack([pink_noise(self.time_steps) for _ in range(self.size[0])], axis=0)
+        self.buffer = powerlaw_psd_gaussian(exponent=self.beta, size=self.size, fmin=self.minimum_frequency, rng=self.rng)
         self.idx = 0
 
     def sample(self, T=1):
@@ -130,3 +217,126 @@ class ColoredNoiseProcess:
 
         ret = self.scale * np.concatenate(ret, axis=-1)
         return ret if n > 1 else ret[..., 0]
+
+
+"""Colored noise implementations for Stable Baselines3"""
+
+
+class ColoredActionNoise(ActionNoise):
+    def __init__(self, beta, sigma, seq_len, action_dim=None, rng=None):
+        """Action noise from a colored noise process.
+
+        Parameters
+        ----------
+        beta : float or array_like
+            Exponent(s) of colored noise power-law spectra. If it is a single float, then `action_dim` has to be
+            specified and the noise will be sampled in a vectorized manner for each action dimension. If it is
+            array_like, then it specifies one beta for each action dimension. This allows different betas for different
+            action dimensions, but sampling might be slower for high-dimensional action spaces.
+        sigma : float or array_like
+            Noise scale(s) of colored noise signals. Either a single float to be used for all action dimensions, or
+            an array_like of the same dimensionality as the action space (one scale for each action dimension).
+        seq_len : int
+            Length of sampled colored noise signals. If sampled for longer than `seq_len` steps, a new
+            colored noise signal of the same length is sampled. Should usually be set to the episode length
+            (horizon) of the RL task.
+        action_dim : int, optional
+            Dimensionality of the action space. If passed, `beta` has to be a single float and the noise will be
+            sampled in a vectorized manner for each action dimension.
+        rng : np.random.Generator, optional
+            Random number generator (for reproducibility). If not passed, a new random number generator is created by
+            calling `np.random.default_rng()`.
+        """
+        super().__init__()
+        assert (action_dim is not None) == np.isscalar(beta), "`action_dim` has to be specified if and only if `beta` is a scalar."
+
+        self.sigma = np.full(action_dim or len(beta), sigma) if np.isscalar(sigma) else np.asarray(sigma)
+
+        if np.isscalar(beta):
+            self.beta = beta
+            self.gen = ColoredNoiseProcess(beta=self.beta, scale=self.sigma, size=(action_dim, seq_len), rng=rng)
+        else:
+            self.beta = np.asarray(beta)
+            self.gen = [ColoredNoiseProcess(beta=b, scale=s, size=seq_len, rng=rng) for b, s in zip(self.beta, self.sigma)]
+
+    def __call__(self) -> np.ndarray:
+        return self.gen.sample() if np.isscalar(self.beta) else np.asarray([g.sample() for g in self.gen])
+
+    def __repr__(self) -> str:
+        return f"ColoredActionNoise(beta={self.beta}, sigma={self.sigma})"
+
+
+class ColoredNoiseDist(SquashedDiagGaussianDistribution):
+    def __init__(self, beta, seq_len, action_dim=None, rng=None, epsilon=1e-6):
+        """
+        Gaussian colored noise distribution for using colored action noise with stochastic policies.
+
+        The colored noise is only used for sampling actions. In all other respects, this class acts like its parent
+        class (`SquashedDiagGaussianDistribution`).
+
+        Parameters
+        ----------
+        beta : float or array_like
+            Exponent(s) of colored noise power-law spectra. If it is a single float, then `action_dim` has to be
+            specified and the noise will be sampled in a vectorized manner for each action dimension. If it is
+            array_like, then it specifies one beta for each action dimension. This allows different betas for different
+            action dimensions, but sampling might be slower for high-dimensional action spaces.
+        seq_len : int
+            Length of sampled colored noise signals. If sampled for longer than `seq_len` steps, a new
+            colored noise signal of the same length is sampled. Should usually be set to the episode length
+            (horizon) of the RL task.
+        action_dim : int, optional
+            Dimensionality of the action space. If passed, `beta` has to be a single float and the noise will be
+            sampled in a vectorized manner for each action dimension.
+        rng : np.random.Generator, optional
+            Random number generator (for reproducibility). If not passed, a new random number generator is created by
+            calling `np.random.default_rng()`.
+        epsilon : float, optional, by default 1e-6
+            A small value to avoid NaN due to numerical imprecision.
+        """
+        assert (action_dim is not None) == np.isscalar(beta), "`action_dim` has to be specified if and only if `beta` is a scalar."
+
+        if np.isscalar(beta):
+            super().__init__(action_dim, epsilon)
+            self.beta = beta
+            self.gen = ColoredNoiseProcess(beta=self.beta, size=(action_dim, seq_len), rng=rng)
+        else:
+            super().__init__(len(beta), epsilon)
+            self.beta = np.asarray(beta)
+            self.gen = [ColoredNoiseProcess(beta=b, size=seq_len, rng=rng) for b in self.beta]
+
+    def sample(self) -> th.Tensor:
+        if np.isscalar(self.beta):
+            cn_sample = th.tensor(self.gen.sample()).float()
+        else:
+            cn_sample = th.tensor([cnp.sample() for cnp in self.gen]).float()
+        self.gaussian_actions = self.distribution.mean + self.distribution.stddev * cn_sample
+        return th.tanh(self.gaussian_actions)
+
+    def __repr__(self) -> str:
+        return f"ColoredNoiseDist(beta={self.beta})"
+
+
+class PinkNoiseDist(ColoredNoiseDist):
+    def __init__(self, seq_len, action_dim, rng=None, epsilon=1e-6):
+        """
+        Gaussian pink noise distribution for using pink action noise with stochastic policies.
+
+        The pink noise is only used for sampling actions. In all other respects, this class acts like its parent
+        class (`SquashedDiagGaussianDistribution`).
+
+        Parameters
+        ----------
+        seq_len : int
+            Length of sampled colored noise signals. If sampled for longer than `seq_len` steps, a new
+            colored noise signal of the same length is sampled. Should usually be set to the episode length
+            (horizon) of the RL task.
+        action_dim : int
+            Dimensionality of the action space.
+        rng : np.random.Generator, optional
+            Random number generator (for reproducibility). If not passed, a new random number generator is created by
+            calling `np.random.default_rng()`.
+        epsilon : float, optional, by default 1e-6
+            A small value to avoid NaN due to numerical imprecision.
+        """
+        super().__init__(1, seq_len, action_dim, rng, epsilon)

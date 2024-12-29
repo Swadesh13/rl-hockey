@@ -1,0 +1,10 @@
+gymnasium
+hockey @ git+https://github.com/martius-lab/hockey-env.git@cc48daa135e2cca3e620b90431e57870f61d043c
+matplotlib
+numpy
+pygame
+seaborn
+stable_baselines3
+tensorboard
+torch
+tqdm
