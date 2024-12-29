@@ -5,8 +5,8 @@ from rewards import filter_reward, get_additional_rewards
 
 
 class HockeyEnv_SB3(hockey_env.HockeyEnv_BasicOpponent):
-    def __init__(self, mode=hockey_env.HockeyEnv.NORMAL, weak_opponent=False, additional_rewards: List[str] = None):
-        super().__init__(mode=mode, weak_opponent=weak_opponent)
+    def __init__(self, weak_opponent=False, additional_rewards: List[str] = None):
+        super().__init__(weak_opponent=weak_opponent)
         if additional_rewards:
             assert (
                 len(set(additional_rewards).difference(set(["puck_throw_angle", "pred_dist_from_puck", "puck_infront"]))) == 0

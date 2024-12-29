@@ -310,7 +310,7 @@ class ColoredNoiseDist(SquashedDiagGaussianDistribution):
             cn_sample = th.tensor(self.gen.sample()).float()
         else:
             cn_sample = th.tensor([cnp.sample() for cnp in self.gen]).float()
-        self.gaussian_actions = self.distribution.mean + self.distribution.stddev * cn_sample
+        self.gaussian_actions = self.distribution.mean + self.distribution.stddev * cn_sample.to(self.distribution.stddev.device)
         return th.tanh(self.gaussian_actions)
 
     def __repr__(self) -> str:

@@ -51,4 +51,4 @@ class PrioritizedMemory(ReplayBuffer):
 
     def update_priorities(self, indices, priorities):
         for idx, priority in zip(indices, priorities):
-            self.priorities[idx] = np.array(priority)[0]
+            self.priorities[idx] = priority
