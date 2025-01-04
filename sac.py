@@ -143,7 +143,9 @@ def get_SAC_agent(env, noise=None, prioritized_memory=False, tensorboard_log=Non
         learning_starts=10,
         gradient_steps=-1,
         tensorboard_log=tensorboard_log,
-        policy_kwargs={"net_arch": POLICY_NET_ARCH},
+        policy_kwargs={
+            "net_arch": POLICY_NET_ARCH,
+        },
         **kwargs,
     )
     if noise == "pink":
