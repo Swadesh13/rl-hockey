@@ -17,7 +17,7 @@ def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, rend
     - std_reward: Standard deviation of rewards over all episodes.
     """
     if opponent_right is None:
-        opponent_right = h_env.BasicOpponent(weak_opponent=False)
+        opponent_right = h_env.BasicOpponent(weak=False)
         
     if env is None:
         env = h_env.HockeyEnv()

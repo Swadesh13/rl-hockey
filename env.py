@@ -3,7 +3,7 @@ from hockey import hockey_env
 from hyperparams import REWARD_MULTIPLIER
 from rewards import filter_reward, get_additional_rewards
 from stable_baselines3.common.vec_env import DummyVecEnv
-
+from stable_baselines3.common.env_util import make_vec_env
 
 class HockeyEnv_SB3(hockey_env.HockeyEnv_BasicOpponent):
     def __init__(self, weak_opponent=False, additional_rewards: List[str] = None):
