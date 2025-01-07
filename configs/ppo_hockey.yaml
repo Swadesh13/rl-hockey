@@ -1,0 +1,30 @@
+# ppo_config.yaml
+
+environment:
+  env_name: "Hockey-v0"
+  n_envs: 1
+  seed: 42
+
+model:
+  name: "ppo"  # Could be "ppo", "sac", etc.
+  models_dir: "ppo/models/"
+  hyperparameters:
+    learning_rate: 0.0003
+    n_steps: 256
+    batch_size: 64
+    n_epochs: 10
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.2
+    vf_coef: 0.5
+    ent_coef: 0.01
+    max_grad_norm: 0.5
+
+training:
+  total_timesteps: 500000
+  save_model_every: 10000
+  model_path: "ppo/models/ppo_hockey"
+
+logging:
+  log_dir: "./logs/"
+  verbose: 1
