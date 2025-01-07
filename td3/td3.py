@@ -3,16 +3,16 @@ import sys
 
 import numpy as np
 import torch
-from stable_baselines3 import PPO
+from stable_baselines3 import TD3
 
 from utils.evaluate import eval_agent
 from utils.parsing import *
 
 
-class HockeyPPOAgent:
+class HockeyTD3Agent:
     def __init__(self, env, config):
         """
-        Initializes the PPO agent for the Hockey environment.
+        Initializes the TD3 agent for the Hockey environment.
 
         Parameters:
         - env: The environment instance.
@@ -27,7 +27,7 @@ class HockeyPPOAgent:
         self.model_path = self.config.training.model_path
 
         hyperparameters = self.config.model.hyperparameters
-        self.model = PPO(
+        self.model = TD3(
             "MlpPolicy",
             self.env,
             **hyperparameters,
@@ -36,7 +36,7 @@ class HockeyPPOAgent:
 
     def train(self, total_timesteps=None):
         """
-        Trains the PPO model.
+        Trains the TD3 model.
 
         Parameters:
         - total_timesteps: Total timesteps for training.
@@ -49,7 +49,7 @@ class HockeyPPOAgent:
 
     def evaluate(self, num_episodes=10, render_mode="human", opponent_right=None):
         """
-        Evaluates the trained PPO model in the environment.
+        Evaluates the trained TD3 model in the environment.
 
         Parameters:
         - num_episodes: Number of episodes to evaluate (overrides config if provided).
@@ -70,7 +70,7 @@ class HockeyPPOAgent:
 
     def save(self, save_path=None):
         """
-        Saves the trained PPO model.
+        Saves the trained TD3 model.
         """
         path = save_path or self.model_path
         self.model.save(path)
@@ -78,11 +78,11 @@ class HockeyPPOAgent:
 
     def load(self, load_path=None):
         """
-        Loads the PPO model.
+        Loads the TD3 model.
         """
         path = load_path or self.model_path
         if os.path.exists(f"{path}.zip"):
-            self.model = PPO.load(path, env=self.env)
+            self.model = TD3.load(path, env=self.env)
             print(f"Model loaded from {path}")
         else:
             print(f"No model found at {path}. Starting with a new model.")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     env = HockeyEnv_SB3.make_vec_env(n_envs=cfg.environment.n_envs)
 
-    agent = HockeyPPOAgent(env, config=cfg)
+    agent = HockeyTD3Agent(env, config=cfg)
 
     if args.train:
         agent.train(total_timesteps=cfg.training.total_timesteps)

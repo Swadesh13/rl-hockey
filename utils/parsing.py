@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        default="configs/ppo_hockey.yaml",
+        required=True,
         help="Path to the config file",
     )
 
@@ -171,7 +171,16 @@ def get_config_from_args(args, cfgnode=True):
 
 
 def get_default_ppo_config(cfgnode=True):
+    print(f"Loading default PPO config 'configs/ppo_hockey.yaml'")
     config = load_config("configs/ppo_hockey.yaml")
+    if cfgnode:
+        config = convert_to_cfgnode(config)
+    return config
+
+
+def get_default_td3_config(cfgnode=True):
+    print(f"Loading default TD3 config 'configs/td3_hockey.yaml'")
+    config = load_config("configs/td3_hockey.yaml")
     if cfgnode:
         config = convert_to_cfgnode(config)
     return config
