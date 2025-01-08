@@ -1,12 +1,11 @@
 from typing import List
 from hockey import hockey_env
-from hyperparams import REWARD_MULTIPLIER
 from rewards import filter_reward, get_additional_rewards
-from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 
+
 class HockeyEnv_SB3(hockey_env.HockeyEnv_BasicOpponent):
-    def __init__(self, weak_opponent=False, additional_rewards: List[str] = None):
+    def __init__(self, weak_opponent: bool = False, additional_rewards: List[str] = None, reward_multiplier: float = 1.0):
         # Initialize the parent class with the weak_opponent parameter
         super().__init__(weak_opponent=weak_opponent)
         # Check if additional_rewards contains only known reward types
@@ -15,6 +14,7 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv_BasicOpponent):
                 len(set(additional_rewards).difference(set(["puck_throw_angle", "pred_dist_from_puck", "puck_infront"]))) == 0
             ), "Unknown additional reward"
         self.additional_rewards = additional_rewards
+        self.reward_multiplier = reward_multiplier
 
     def step(self, action):
         # Perform the step in the parent class and get the observation, reward, done, time, and info
@@ -29,16 +29,16 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv_BasicOpponent):
             for key in self.additional_rewards:
                 reward += r2[key]
         # Multiply the reward by the reward multiplier
-        reward *= REWARD_MULTIPLIER
+        reward *= self.reward_multiplier
         return obs, reward, done, t, info
 
     def reset(self, seed=None, options=None, one_starting=None, mode=None):
         # Seed the environment with the given seed
         super().seed(seed)
         return super().reset(one_starting, mode)
-    
+
     @staticmethod
-    def make_vec_env(n_envs=1, weak_opponent=False, additional_rewards: List[str] = None):
+    def make_vec_env(n_envs=1, weak_opponent: bool = False, additional_rewards: List[str] = None, reward_multiplier: float = 1.0):
         """
         Create and return a vectorized version of the HockeyEnv_SB3 environment.
 
@@ -50,7 +50,8 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv_BasicOpponent):
         Returns:
             VecEnv: A vectorized environment.
         """
+
         def create_env():
-            return HockeyEnv_SB3(weak_opponent=weak_opponent, additional_rewards=additional_rewards)
+            return HockeyEnv_SB3(weak_opponent=weak_opponent, additional_rewards=additional_rewards, reward_multiplier=reward_multiplier)
 
         return make_vec_env(create_env, n_envs=n_envs)

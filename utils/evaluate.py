@@ -1,9 +1,10 @@
 import numpy as np
 import hockey.hockey_env as h_env
 
+
 def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, render_mode="human"):
     """
-    Runs a PPO agent in a Hockey environment for a specified number of episodes.
+    Runs an agent in a Hockey environment for a specified number of episodes.
 
     Parameters:
     - player_left: Trained agent to be tested.
@@ -18,10 +19,10 @@ def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, rend
     """
     if opponent_right is None:
         opponent_right = h_env.BasicOpponent(weak=False)
-        
+
     if env is None:
         env = h_env.HockeyEnv()
-    
+
     total_rewards = []
 
     for episode in range(num_episodes):

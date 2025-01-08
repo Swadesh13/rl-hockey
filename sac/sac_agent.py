@@ -3,11 +3,9 @@ import torch as th
 from torch.nn import functional as F
 from noise import PinkNoiseDist
 from memory import ExperienceMemory, PrioritizedMemory
-from hyperparams import ALPHA, GAMMA, LR, BATCH_SIZE, TAU, BUFFER_SIZE, POLICY_NET_ARCH, NOISE, PRIORITIZED_MEMORY, TENSORBOARD
 from stable_baselines3 import SAC
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
-# from norm_flows import RealNVPPolicy
 
 
 class SAC_PM(SAC):
@@ -120,34 +118,25 @@ class SAC_PM(SAC):
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
 
-def get_SAC_agent(env):
+def get_SAC_agent(env, config):
     kwargs = {}
-    if PRIORITIZED_MEMORY:
+    hyperparameters = config.model.hyperparameters
+    if config.model.prioritized_memory:
         agent = SAC_PM
         kwargs["replay_buffer_class"] = PrioritizedMemory
     else:
         agent = SAC
         kwargs["replay_buffer_class"] = ExperienceMemory
-    if NOISE == "brownian":
+    if config.model.noise == "brownian":
         kwargs["action_noise"] = OrnsteinUhlenbeckActionNoise(np.zeros(env.action_space.shape[0]), np.zeros(env.action_space.shape[0]) + 0.5)
     agent = agent(
         "MlpPolicy",
         env,
-        LR,
-        BUFFER_SIZE,
-        batch_size=BATCH_SIZE,
-        tau=TAU,
-        gamma=GAMMA,
-        ent_coef=f"auto_{ALPHA}",
-        train_freq=(1, "episode"),
-        learning_starts=10,
-        gradient_steps=-1,
-        tensorboard_log=TENSORBOARD,
-        policy_kwargs={
-            "net_arch": POLICY_NET_ARCH,
-        },
+        verbose=config.logging.verbose,
+        tensorboard_log=config.logging.tensorboard,
+        **hyperparameters,
         **kwargs,
     )
-    if NOISE == "pink":
+    if config.model.noise == "pink":
         agent.actor.action_dist = PinkNoiseDist(250, env.action_space.shape[0])
     return agent
