@@ -1,13 +1,10 @@
 import os
 import sys
+from sac_agent import get_SAC_agent, SAC, SAC_PM
 
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), ".."))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
-
-from sac_agent import get_SAC_agent, SAC, SAC_PM
-from utils.evaluate import eval_agent
-from utils.parsing import parse_args, get_config_from_args, print_config, print_args
 
 
 class HockeySACAgent:
@@ -53,6 +50,7 @@ class HockeySACAgent:
         - mean_reward: Mean reward over all episodes.
         - std_reward: Standard deviation of rewards over all episodes.
         """
+        from utils.evaluate import eval_agent
 
         return eval_agent(
             self.model,
@@ -82,6 +80,8 @@ class HockeySACAgent:
 
 
 if __name__ == "__main__":
+    from utils.parsing import parse_args, get_config_from_args, print_config, print_args
+
     args = parse_args()
     cfg = get_config_from_args(args, cfgnode=True)
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     from env import HockeyEnv_SB3
 
-    env = HockeyEnv_SB3.make_vec_env(n_envs=cfg.environment.n_envs)
+    env = HockeyEnv_SB3.make_vec_env(cfg.environment.n_envs, False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier)
 
     agent = HockeySACAgent(env, cfg)
 

@@ -2,6 +2,8 @@ environment:
   env_name: "Hockey-v0"
   n_envs: 1
   seed: 42
+  reward_multiplier: 10
+  additional_rewards: []
 
 model:
   name: "sac"  # Could be "td3", "sac", etc.
