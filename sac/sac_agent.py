@@ -1,11 +1,11 @@
 import numpy as np
 import torch as th
 from torch.nn import functional as F
-from noise import PinkNoiseDist
-from memory import ExperienceMemory, PrioritizedMemory
 from stable_baselines3 import SAC
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
+from utils.memory import ExperienceMemory, PrioritizedMemory
+from utils.noise import PinkNoiseDist
 
 
 class SAC_PM(SAC):

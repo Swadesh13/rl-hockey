@@ -76,6 +76,12 @@ def load_config(config_path):
     return config
 
 
+def save_config(config_path, config_data):
+    "Save YAML configuration file"
+    with open(config_path, "w", encoding="utf-8") as yaml_file:
+        yaml.dump(config_data, yaml_file, sort_keys=False, allow_unicode=True)
+
+
 def override_args(config, args):
     """Override configuration values with command-line arguments."""
     # Environment overrides

@@ -1,5 +1,6 @@
 import numpy as np
 import hockey.hockey_env as h_env
+from henv.env import BasicOpponent
 
 
 def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, render_mode="human"):
@@ -18,7 +19,7 @@ def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, rend
     - std_reward: Standard deviation of rewards over all episodes.
     """
     if opponent_right is None:
-        opponent_right = h_env.BasicOpponent(weak=False)
+        opponent_right = BasicOpponent(weak=False)
 
     if env is None:
         env = h_env.HockeyEnv()
@@ -32,8 +33,8 @@ def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, rend
 
         while True:
             env.render(mode=render_mode)
-            a1, _states = player_left.predict(obs, deterministic=True)
-            a2 = opponent_right.act(obs_agent2)
+            a1, _ = player_left.predict(obs, deterministic=True)
+            a2, _ = opponent_right.predict(obs_agent2, deterministic=True)
             obs, reward, done, _, info = env.step(np.hstack([a1, a2]))
             obs_agent2 = env.obs_agent_two()
             episode_reward += reward
@@ -42,7 +43,7 @@ def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, rend
                 break
 
         total_rewards.append(episode_reward)
-        print(f"Episode {episode + 1:<3} Reward: {int(episode_reward):>3}")
+        print(f"Episode {episode + 1:<3} Reward: {episode_reward:>5.2f}")
 
     env.close()
 
