@@ -2,13 +2,13 @@ import os
 import sys
 from glob import glob
 
-import hockey.hockey_env as h_env
 import numpy as np
 import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
 
+from henv.env import HockeyEnv_SB3
 from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
 from utils.parsing import *
@@ -73,23 +73,27 @@ if __name__ == "__main__":
     agent = PPO_HockeyAgent(env, config=cfg)
 
     if args.train:
+        from stable_baselines3.common.monitor import Monitor
+
         callback_list = []
         # Define callbacks
         checkpoint_callback = CheckpointCallback(
-            save_freq=1000,
+            save_freq=cfg.training.save_model_every,
             save_path=f"{agent.save_dir}/chkpts",
             name_prefix="ppo_model",
         )
+
+        eval_env = Monitor(HockeyEnv_SB3())
         eval_callback = EvalCallback(
-            h_env.HockeyEnv(),
+            eval_env,
             best_model_save_path=f"{agent.save_dir}/best_model/",
             log_path=f"{agent.save_dir}/ppo_eval_logs/",
             eval_freq=1000,
             deterministic=True,
             render=False,
         )
-        # callback_list.append(checkpoint_callback)
-        # callback_list.append(eval_callback)
+        callback_list.append(checkpoint_callback)
+        callback_list.append(eval_callback)
 
         agent.train(
             total_timesteps=cfg.training.total_timesteps,
@@ -97,7 +101,7 @@ if __name__ == "__main__":
             progress_bar=False,
             callbacks=callback_list,
         )
-        agent.save()
+        # agent.save()
 
     if args.eval:
         agent.load()

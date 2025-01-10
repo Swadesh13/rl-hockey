@@ -23,9 +23,10 @@ model:
     max_grad_norm: 0.5
 
 training:
-  total_timesteps: 3000
+  total_timesteps: 100_000
   log_interval: 1
   model_path: ppo/models/ppo_test
+  save_model_every: 10_000
 
 logging:
   log_dir: ./logs/

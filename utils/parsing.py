@@ -70,23 +70,27 @@ def parse_args():
 
     # Hyperparameters overrides
     parser.add_argument(
-        "--learning_rate", type=float, default=None, help="Override learning rate"
+        "--learning_rate",
+        "-lr",
+        type=float,
+        default=None,
+        help="Override learning rate",
     )
     parser.add_argument(
         "--n_steps", type=int, default=None, help="Override number of steps"
     )
     parser.add_argument(
-        "--batch_size", type=int, default=None, help="Override batch size"
+        "--batch_size", "-bs", type=int, default=None, help="Override batch size"
     )
     parser.add_argument(
         "--n_epochs", type=int, default=None, help="Override number of epochs"
     )
     parser.add_argument("--gamma", type=float, default=None, help="Override gamma")
     parser.add_argument(
-        "--gae_lambda", type=float, default=None, help="Override GAE lambda"
+        "--gae_lambda", "-gae", type=float, default=None, help="Override GAE lambda"
     )
     parser.add_argument(
-        "--clip_range", type=float, default=None, help="Override clip range"
+        "--clip_range", "-clip", type=float, default=None, help="Override clip range"
     )
     parser.add_argument(
         "--vf_coef",
