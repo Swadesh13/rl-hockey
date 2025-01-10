@@ -1,6 +1,8 @@
 *test*
 *.pkl
 logs
+ppo/ppo_hockey_tensorboard/
+ppo/models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -173,4 +175,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-ppo/ppo_hockey_tensorboard/
+
