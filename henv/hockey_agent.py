@@ -1,6 +1,9 @@
 from abc import abstractmethod
-from henv.env import HockeyEnv_SB3
+
 from fvcore.common.config import CfgNode
+from stable_baselines3.common.callbacks import CallbackList
+
+from henv.env import HockeyEnv_SB3
 
 
 class HockeyAgent:
@@ -15,29 +18,51 @@ class HockeyAgent:
         self.env = env
         self.config = config
         if not self.config.training.model_path:
-            raise ValueError("Model path for training is not specified in the configuration.")
+            raise ValueError(
+                "Model path for training is not specified in the configuration."
+            )
         self.model_path = self.config.training.model_path
 
         self.model = None
 
-    def train(self, total_timesteps: int = None, log_interval: int = None, progress_bar: bool = False):
+    def train(
+        self,
+        total_timesteps: int = None,
+        log_interval: int = None,
+        progress_bar: bool = False,
+        callbacks: list = None,
+    ):
         """
         Trains the PPO model.
 
         Parameters:
         - total_timesteps: Total timesteps for training.
+        - log_interval: Log interval for training progress.
+        - progress_bar: Whether to display a progress bar during training.
+        - callbacks: List of callbacks to use during training.
         """
         if not self.model:
             raise ValueError("Model not loaded!")
         tt = total_timesteps or self.config.training.total_timesteps
         li = log_interval or self.config.training.log_interval
+        callback_list = CallbackList(callbacks) if callbacks else None
+
         if self.config.logging.verbose:
             print("Starting training...")
-        self.model.learn(total_timesteps=tt, log_interval=li, progress_bar=progress_bar)
+
+        self.model.learn(
+            total_timesteps=tt,
+            log_interval=li,
+            progress_bar=progress_bar,
+            callback=callback_list,
+        )
+
         if self.config.logging.verbose:
             print("Training complete.")
 
-    def evaluate(self, num_episodes: int = 10, render_mode: str = "human", opponent_right=None):
+    def evaluate(
+        self, num_episodes: int = 10, render_mode: str = "human", opponent_right=None
+    ):
         """
         Evaluates the trained model in the environment.
 

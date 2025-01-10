@@ -1,15 +1,20 @@
 import os
 import sys
+from glob import glob
 
+import hockey.hockey_env as h_env
 import numpy as np
 import torch
 from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+from stable_baselines3.common.logger import configure
 
+from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
 from utils.parsing import *
 
 
-class HockeyPPOAgent:
+class PPO_HockeyAgent(HockeyAgent):
     def __init__(self, env, config):
         """
         Initializes the PPO agent for the Hockey environment.
@@ -18,63 +23,28 @@ class HockeyPPOAgent:
         - env: The environment instance.
         - config: Configuration node (CfgNode).
         """
-        self.env = env
-        self.config = config
-        if not self.config.training.model_path:
-            raise ValueError(
-                "Model path for training is not specified in the configuration."
-            )
-        self.model_path = self.config.training.model_path
+        super().__init__(env, config)
+        tnsr_dir = self.config.logging.tensorboard
+        self.save_dir = f"{tnsr_dir}PPO_{len(glob(f'{tnsr_dir}PPO_*'))}"
+        print("Saving files at:", self.save_dir)
+        os.makedirs(self.save_dir, exist_ok=True)
 
-        hyperparameters = self.config.model.hyperparameters
+        kwargs = {}
         self.model = PPO(
             "MlpPolicy",
             self.env,
-            **hyperparameters,
             verbose=self.config.logging.verbose,
+            tensorboard_log=self.save_dir,
+            **self.config.model.hyperparameters,
+            **kwargs,
         )
 
-    def train(self, total_timesteps=None):
-        """
-        Trains the PPO model.
+        # make sure it saves the tensorboard logs in the correct directory
+        new_logger = configure(self.save_dir, ["tensorboard"])
+        self.model.set_logger(new_logger)
 
-        Parameters:
-        - total_timesteps: Total timesteps for training.
-        """
-        tt = total_timesteps or self.config.training.total_timesteps
-
-        print("Starting training...")
-        self.model.learn(total_timesteps=tt)
-        print("Training complete.")
-
-    def evaluate(self, num_episodes=10, render_mode="human", opponent_right=None):
-        """
-        Evaluates the trained PPO model in the environment.
-
-        Parameters:
-        - num_episodes: Number of episodes to evaluate (overrides config if provided).
-        - render_mode: Mode for rendering the environment (overrides config if provided).
-        - opponent_right: Optional opponent for the evaluation.
-
-        Returns:
-        - mean_reward: Mean reward over all episodes.
-        - std_reward: Standard deviation of rewards over all episodes.
-        """
-
-        return eval_agent(
-            self.model,
-            opponent_right=opponent_right,
-            num_episodes=num_episodes,
-            render_mode=render_mode,
-        )
-
-    def save(self, save_path=None):
-        """
-        Saves the trained PPO model.
-        """
-        path = save_path or self.model_path
-        self.model.save(path)
-        print(f"Model saved at {path}")
+        # save the configuration
+        save_config(os.path.join(self.save_dir, "config.yaml"), self.config)
 
     def load(self, load_path=None):
         """
@@ -96,16 +66,43 @@ if __name__ == "__main__":
         print_config(cfg)
         print_args(args)
 
-    from env import HockeyEnv_SB3
+    from henv.env import HockeyEnv_SB3
 
     env = HockeyEnv_SB3.make_vec_env(n_envs=cfg.environment.n_envs)
 
-    agent = HockeyPPOAgent(env, config=cfg)
+    agent = PPO_HockeyAgent(env, config=cfg)
 
     if args.train:
-        agent.train(total_timesteps=cfg.training.total_timesteps)
+        callback_list = []
+        # Define callbacks
+        checkpoint_callback = CheckpointCallback(
+            save_freq=1000,
+            save_path=f"{agent.save_dir}/chkpts",
+            name_prefix="ppo_model",
+        )
+        eval_callback = EvalCallback(
+            h_env.HockeyEnv(),
+            best_model_save_path=f"{agent.save_dir}/best_model/",
+            log_path=f"{agent.save_dir}/ppo_eval_logs/",
+            eval_freq=1000,
+            deterministic=True,
+            render=False,
+        )
+        # callback_list.append(checkpoint_callback)
+        # callback_list.append(eval_callback)
+
+        agent.train(
+            total_timesteps=cfg.training.total_timesteps,
+            log_interval=cfg.training.log_interval,
+            progress_bar=False,
+            callbacks=callback_list,
+        )
         agent.save()
 
     if args.eval:
         agent.load()
-        agent.evaluate(num_episodes=args.eval_episodes)
+        agent.evaluate(
+            num_episodes=args.eval_episodes,
+            render_mode="human" if not args.no_render else "rgb_array",
+            opponent_right=None,
+        )

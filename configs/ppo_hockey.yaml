@@ -1,13 +1,15 @@
 # ppo_config.yaml
 
 environment:
-  env_name: "Hockey-v0"
+  env_name: Hockey-v0
   n_envs: 1
   seed: 42
+  reward_multiplier: 10
+  additional_rewards: []
 
 model:
-  name: "ppo"  # Could be "ppo", "sac", etc.
-  models_dir: "ppo/models/"
+  name: ppo  # Could be ppo, sac, etc.
+  models_dir: ppo/models/
   hyperparameters:
     learning_rate: 0.0003
     n_steps: 256
@@ -21,10 +23,11 @@ model:
     max_grad_norm: 0.5
 
 training:
-  total_timesteps: 500000
-  save_model_every: 10000
-  model_path: "ppo/models/ppo_hockey"
+  total_timesteps: 3000
+  log_interval: 1
+  model_path: ppo/models/ppo_test
 
 logging:
-  log_dir: "./logs/"
+  log_dir: ./logs/
   verbose: 1
+  tensorboard: ./ppo/logs/

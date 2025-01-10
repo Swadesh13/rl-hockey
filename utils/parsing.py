@@ -7,7 +7,16 @@ from fvcore.common.config import CfgNode
 def parse_args():
     parser = argparse.ArgumentParser(description="Run RL training script")
 
-    parser.add_argument("--quiet", "-q", action="store_true", help="Run the program in quiet mode")
+    parser.add_argument(
+        "--quiet", "-q", action="store_true", help="Run the program in quiet mode"
+    )
+
+    parser.add_argument(
+        "--no_render",
+        action="store_true",
+        default=False,
+        help="Disable rendering during training and evaluation",
+    )
 
     # Config file argument
     parser.add_argument(
@@ -29,8 +38,12 @@ def parse_args():
     )
 
     # Override arguments
-    parser.add_argument("--env_name", type=str, default=None, help="Override the environment name")
-    parser.add_argument("--n_envs", type=int, default=None, help="Override number of environments")
+    parser.add_argument(
+        "--env_name", type=str, default=None, help="Override the environment name"
+    )
+    parser.add_argument(
+        "--n_envs", type=int, default=None, help="Override number of environments"
+    )
     parser.add_argument("--seed", type=int, default=None, help="Override the seed")
     parser.add_argument(
         "--total_timesteps",
@@ -45,26 +58,48 @@ def parse_args():
         default=None,
         help="Override save model frequency",
     )
-    parser.add_argument("--model_path", type=str, default=None, help="Override model save path")
-    parser.add_argument("--log_dir", type=str, default=None, help="Override logging directory")
-    parser.add_argument("--verbose", type=int, default=None, help="Override verbosity level")
+    parser.add_argument(
+        "--model_path", type=str, default=None, help="Override model save path"
+    )
+    parser.add_argument(
+        "--log_dir", type=str, default=None, help="Override logging directory"
+    )
+    parser.add_argument(
+        "--verbose", type=int, default=None, help="Override verbosity level"
+    )
 
     # Hyperparameters overrides
-    parser.add_argument("--learning_rate", type=float, default=None, help="Override learning rate")
-    parser.add_argument("--n_steps", type=int, default=None, help="Override number of steps")
-    parser.add_argument("--batch_size", type=int, default=None, help="Override batch size")
-    parser.add_argument("--n_epochs", type=int, default=None, help="Override number of epochs")
+    parser.add_argument(
+        "--learning_rate", type=float, default=None, help="Override learning rate"
+    )
+    parser.add_argument(
+        "--n_steps", type=int, default=None, help="Override number of steps"
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=None, help="Override batch size"
+    )
+    parser.add_argument(
+        "--n_epochs", type=int, default=None, help="Override number of epochs"
+    )
     parser.add_argument("--gamma", type=float, default=None, help="Override gamma")
-    parser.add_argument("--gae_lambda", type=float, default=None, help="Override GAE lambda")
-    parser.add_argument("--clip_range", type=float, default=None, help="Override clip range")
+    parser.add_argument(
+        "--gae_lambda", type=float, default=None, help="Override GAE lambda"
+    )
+    parser.add_argument(
+        "--clip_range", type=float, default=None, help="Override clip range"
+    )
     parser.add_argument(
         "--vf_coef",
         type=float,
         default=None,
         help="Override value function coefficient",
     )
-    parser.add_argument("--ent_coef", type=float, default=None, help="Override entropy coefficient")
-    parser.add_argument("--max_grad_norm", type=float, default=None, help="Override max gradient norm")
+    parser.add_argument(
+        "--ent_coef", type=float, default=None, help="Override entropy coefficient"
+    )
+    parser.add_argument(
+        "--max_grad_norm", type=float, default=None, help="Override max gradient norm"
+    )
 
     return parser.parse_args()
 
@@ -76,8 +111,21 @@ def load_config(config_path):
     return config
 
 
+def cfg_node_to_dict(cfg_node):
+    """
+    Recursively convert a CfgNode to a dictionary.
+    """
+    if isinstance(cfg_node, CfgNode):
+        return {key: cfg_node_to_dict(value) for key, value in cfg_node.items()}
+    elif isinstance(cfg_node, list):
+        return [cfg_node_to_dict(item) for item in cfg_node]
+    else:
+        return cfg_node
+
+
 def save_config(config_path, config_data):
     "Save YAML configuration file"
+    config_data = cfg_node_to_dict(config_data)
     with open(config_path, "w", encoding="utf-8") as yaml_file:
         yaml.dump(config_data, yaml_file, sort_keys=False, allow_unicode=True)
 

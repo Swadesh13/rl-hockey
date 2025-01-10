@@ -1,9 +1,12 @@
-import numpy as np
 import hockey.hockey_env as h_env
+import numpy as np
+
 from henv.env import BasicOpponent
 
 
-def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, render_mode="human"):
+def eval_agent(
+    player_left, opponent_right=None, env=None, num_episodes=10, render_mode="human"
+):
     """
     Runs an agent in a Hockey environment for a specified number of episodes.
 
@@ -50,6 +53,6 @@ def eval_agent(player_left, opponent_right=None, env=None, num_episodes=10, rend
     # Calculate and return mean reward and standard deviation
     mean_reward = np.mean(total_rewards)
     std_reward = np.std(total_rewards)
-    print(f"Mean Reward: {mean_reward:.2f} ± {std_reward:.2f}")
+    print(f"Overall Avg Reward: {mean_reward:>5.2f} ± {std_reward:.2f}")
 
     return mean_reward, std_reward
