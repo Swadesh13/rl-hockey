@@ -176,3 +176,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+PPOGridSearch.*
+grid_jobs_ppo*
