@@ -104,6 +104,21 @@ def parse_args():
     parser.add_argument(
         "--max_grad_norm", type=float, default=None, help="Override max gradient norm"
     )
+    parser.add_argument(
+        "--clip_range_vf", type=float, default=None, help="Override clip range for the value function"
+    )
+    parser.add_argument(
+        "--normalize_advantage", action="store_true", help="Override to normalize advantage"
+    )
+    parser.add_argument(
+        "--use_sde", action="store_true", help="Override use of State Dependent Exploration"
+    )
+    parser.add_argument(
+        "--target_kl", type=float, default=None, help="Override target KL divergence"
+    )
+    parser.add_argument(
+        "--policy_kwargs", type=str, default=None, help="Override policy keyword arguments as JSON"
+    )
 
     return parser.parse_args()
 
@@ -180,6 +195,18 @@ def override_args(config, args):
         hyperparams["ent_coef"] = args.ent_coef
     if args.max_grad_norm is not None:
         hyperparams["max_grad_norm"] = args.max_grad_norm
+    if args.clip_range_vf is not None:
+        hyperparams["clip_range_vf"] = args.clip_range_vf
+    if args.normalize_advantage:
+        hyperparams["normalize_advantage"] = args.normalize_advantage
+    if args.use_sde:
+        hyperparams["use_sde"] = args.use_sde
+    if args.target_kl is not None:
+        hyperparams["target_kl"] = args.target_kl
+    if args.policy_kwargs is not None:
+        import json
+        hyperparams["policy_kwargs"] = json.loads(args.policy_kwargs)
+
 
     return config
 

@@ -12,6 +12,9 @@ from henv.env import HockeyEnv_SB3
 from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
 from utils.parsing import *
+# from datetime import datetime
+import random
+import time
 
 
 class PPO_HockeyAgent(HockeyAgent):
@@ -25,18 +28,20 @@ class PPO_HockeyAgent(HockeyAgent):
         """
         super().__init__(env, config)
         tnsr_dir = self.config.logging.tensorboard
+        time.sleep(np.random.uniform(0, 15))
         self.save_dir = f"{tnsr_dir}PPO_{len(glob(f'{tnsr_dir}PPO_*'))}"
+        # current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # self.save_dir = f"{tnsr_dir}PPO_{current_time}"
         print("Saving files at:", self.save_dir)
         os.makedirs(self.save_dir, exist_ok=True)
 
-        kwargs = {}
         self.model = PPO(
             "MlpPolicy",
             self.env,
             verbose=self.config.logging.verbose,
             tensorboard_log=self.save_dir,
+            # policy_kwargs=self.config.model.hyperparameters.get("policy_kwargs", {}),
             **self.config.model.hyperparameters,
-            **kwargs,
         )
 
         # make sure it saves the tensorboard logs in the correct directory
@@ -78,7 +83,7 @@ if __name__ == "__main__":
         callback_list = []
         # Define callbacks
         checkpoint_callback = CheckpointCallback(
-            save_freq=cfg.training.save_model_every,
+            save_freq=int(cfg.training.save_model_every / cfg.environment.n_envs),
             save_path=f"{agent.save_dir}/chkpts",
             name_prefix="ppo_model",
         )
