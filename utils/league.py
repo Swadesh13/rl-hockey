@@ -2,7 +2,6 @@ import os
 from glob import glob
 from typing import List
 import numpy as np
-from glob import glob
 from henv.env import HockeyEnv_SB3, BasicOpponent
 from utils.parsing import save_config, get_default_ppo_config, get_default_sac_config, get_default_td3_config
 
