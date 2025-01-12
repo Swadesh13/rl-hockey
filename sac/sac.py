@@ -3,7 +3,7 @@ from sac.sac_agent import get_SAC_agent, SAC, SAC_PM
 from henv.hockey_agent import HockeyAgent
 
 
-class HockeySACAgent(HockeyAgent):
+class SAC_HockeyAgent(HockeyAgent):
     def __init__(self, env, config):
         """
         Initializes the SAC agent for the Hockey environment.
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     env = HockeyEnv_SB3.make_vec_env(cfg.environment.n_envs, False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier)
 
-    agent = HockeySACAgent(env, cfg)
+    agent = SAC_HockeyAgent(env, cfg)
 
     if args.train:
         agent.train(total_timesteps=cfg.training.total_timesteps)

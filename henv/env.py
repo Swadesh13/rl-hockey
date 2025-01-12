@@ -7,6 +7,9 @@ from henv.rewards import filter_reward, get_additional_rewards
 
 
 class BasicOpponent(hockey_env.BasicOpponent):
+    def __init__(self, weak=False, keep_mode=True):
+        super().__init__(weak, keep_mode)
+
     def predict(self, state, deterministic=None):
         return self.act(state), None
 
@@ -21,9 +24,9 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
 
         # Check if additional_rewards contains only known reward types
         if additional_rewards:
-            assert (
-                len(set(additional_rewards).difference(set(["puck_throw_angle", "pred_dist_from_puck", "puck_infront"]))) == 0
-            ), "Unknown additional reward"
+            assert len(set(additional_rewards).difference(set(["puck_throw_angle", "pred_dist_from_puck", "puck_infront"]))) == 0, (
+                "Unknown additional reward"
+            )
         self.additional_rewards = additional_rewards
         self.reward_multiplier = reward_multiplier
 

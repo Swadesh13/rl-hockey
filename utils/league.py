@@ -1,9 +1,10 @@
 import os
+from glob import glob
 from typing import List
 import numpy as np
 from glob import glob
 from henv.env import HockeyEnv_SB3, BasicOpponent
-from utils.parsing import save_config
+from utils.parsing import save_config, get_default_ppo_config, get_default_sac_config, get_default_td3_config
 
 
 class LeagueHockeyEnv(HockeyEnv_SB3):
@@ -30,9 +31,7 @@ class League:
         self.save_dir = save_dir
         if not self.save_dir:
             self.save_dir = f"./logs/league_{len(glob('./logs/league_*'))}"
-        if cfg.logging.tensorboard:
-            cfg.logging.tensorboard = os.path.join(self.save_dir, "tensorboard")
-            agent.model.tensorboard_log = cfg.logging.tensorboard
+        agent.model.tensorboard_log = os.path.join(self.save_dir, "tensorboard")
         print("Saving files at:", self.save_dir)
         os.makedirs(self.save_dir, exist_ok=True)
         save_path = os.path.join(self.save_dir, "model_0")
@@ -116,6 +115,41 @@ class League:
         with open(f"{self.save_dir}/final_opp.txt", "w") as f:
             for opp, sc in zip(self.opponents, self.scores):
                 f.write(f"{opp} - {sc}\n")
+
+
+def load_saved_models(sac=False, td3=False, ppo=False, env=None, cfg=[]):
+    """
+    Load saved models for inference / training other models
+    sac/td3/ppo : bool, whether to load models
+    env: Hockey env
+    cfg: List of config files. len(cfg) is at max 3 - 1 each for sac, td3, ppo
+    """
+    models = []
+    if not env:
+        from henv.env import HockeyEnv_SB3
+
+        env = HockeyEnv_SB3(False)
+
+    def _load(env, cfg, root, model_class):
+        paths = glob(root)
+        for p in paths:
+            m = model_class(env, cfg)
+            m.load(p[:-4])
+            yield m
+
+    if sac:
+        from sac.sac import SAC_HockeyAgent
+
+        models.extend(list(_load(env, cfg[0] if cfg else get_default_sac_config(), "models/sac/*.zip", SAC_HockeyAgent)))
+    if td3:
+        from td3.td3 import TD3_HockeyAgent
+
+        models.extend(list(_load(env, cfg[1] if len(cfg) == 2 else get_default_td3_config(), "models/td3/*.zip", TD3_HockeyAgent)))
+    if ppo:
+        from ppo.ppo import PPO_HockeyAgent
+
+        models.extend(list(_load(env, cfg[2] if len(cfg) == 3 else get_default_ppo_config(), "models/ppo/*.zip", PPO_HockeyAgent)))
+    return models
 
 
 if __name__ == "__main__":
