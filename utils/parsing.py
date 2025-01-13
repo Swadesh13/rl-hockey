@@ -253,7 +253,7 @@ def get_default_td3_config(cfgnode=True):
 
 
 def get_default_sac_config(cfgnode=True):
-    print("Loading default SAC config 'configs/td3_hockey.yaml'")
+    print("Loading default SAC config 'configs/sac_hockey.yaml'")
     config = load_config("configs/sac_hockey.yaml")
     if cfgnode:
         config = convert_to_cfgnode(config)
