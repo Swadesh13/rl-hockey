@@ -1,0 +1,45 @@
+# ppo_config.yaml
+
+environment:
+  env_name: Hockey-v0
+  n_envs: 4
+  seed: 42
+  reward_multiplier: 10
+  additional_rewards: []
+
+model:
+  name: ppo
+  models_dir: ppo/models/
+  hyperparameters:
+    learning_rate: 0.00073
+    n_steps: 512
+    batch_size: 2048
+    n_epochs: 5
+    gamma: 0.999
+    gae_lambda: 0.95
+    clip_range: 0.2
+    clip_range_vf: null  # Default is no clipping
+    normalize_advantage: true  # Default normalization
+    use_sde: false  # Default to no SDE
+    sde_sample_freq: -1
+    target_kl: null  # Default is no KL constraint
+    vf_coef: 0.6482388887006054
+    ent_coef: 0.0009673352
+    max_grad_norm: 0.6
+    policy_kwargs:
+      net_arch: [256, 256] # 256,256
+      ortho_init: true # true
+      activation_fn: relu  # Default activation function relu
+
+training:
+  total_timesteps: 40_000_000
+  log_interval: 1
+  model_path: ppo/models/ppo_test
+  save_model_every: 50_000
+
+logging:
+  log_dir: ./logs/
+  verbose: 1
+  tensorboard: ./ppo/logs/
+
+# python -m ppo.ppo --config configs/ppo_hockey_last.yaml --train -q --n_envs 64 --policy_kwargs '{"net_arch": [256, 256], "ortho_init": true, "activation_fn": "relu"}'

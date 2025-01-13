@@ -35,13 +35,21 @@ class PPO_HockeyAgent(HockeyAgent):
         print("Saving files at:", self.save_dir)
         os.makedirs(self.save_dir, exist_ok=True)
 
+        policy_kwargs = self.config.model.hyperparameters.get("policy_kwargs", {})
+        policy_kwargs = cfg_node_to_dict(policy_kwargs)
+        policy_kwargs["activation_fn"] = get_activation_fn_from_str(policy_kwargs["activation_fn"])
+
+        # Remove `policy_kwargs` from hyperparameters to avoid duplication
+        hyperparameters = self.config.model.hyperparameters.copy()
+        hyperparameters.pop("policy_kwargs", None)
+        
         self.model = PPO(
             "MlpPolicy",
             self.env,
             verbose=self.config.logging.verbose,
             tensorboard_log=self.save_dir,
-            # policy_kwargs=self.config.model.hyperparameters.get("policy_kwargs", {}),
-            **self.config.model.hyperparameters,
+            policy_kwargs=policy_kwargs,
+            **hyperparameters,
         )
 
         # make sure it saves the tensorboard logs in the correct directory

@@ -2,6 +2,7 @@ import argparse
 
 import yaml
 from fvcore.common.config import CfgNode
+import torch.nn as nn
 
 
 def parse_args():
@@ -211,8 +212,10 @@ def override_args(config, args):
         hyperparams["target_kl"] = args.target_kl
     if args.policy_kwargs is not None:
         import json
-        hyperparams["policy_kwargs"] = json.loads(args.policy_kwargs)
-
+        try:
+            hyperparams["policy_kwargs"] = json.loads(args.policy_kwargs)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format for policy_kwargs: {args.policy_kwargs}. Error: {e}")
 
     return config
 
@@ -270,3 +273,24 @@ def print_args(args):
         if value is not None:
             print(f"{arg}: {value}")
     print("-" * 30)
+
+def get_activation_fn_from_str(activation_fn_str):
+    """
+    Convert a string to a corresponding PyTorch activation function.
+    """
+
+    activation_fn_dict = {
+        "relu": nn.ReLU,
+        "tanh": nn.Tanh,
+        "leaky_relu": nn.LeakyReLU,
+        "sigmoid": nn.Sigmoid,
+        "softmax": nn.Softmax,
+        "elu": nn.ELU,
+        "selu": nn.SELU,
+        "gelu": nn.GELU,
+    }
+
+    if activation_fn_str not in activation_fn_dict:
+        raise ValueError(f"Unknown activation function: {activation_fn_str}")
+
+    return activation_fn_dict[activation_fn_str]

@@ -18,19 +18,18 @@ model:
     gamma: 0.98
     gae_lambda: 0.9
     clip_range: 0.1
-    clip_range_vf: null  # Default is no clipping
+    clip_range_vf: 0.2  # Default is no clipping
     normalize_advantage: false  # Default normalization
-    use_sde: false  # Default to no SDE
-    sde_sample_freq: -1
-    target_kl: null  # Default is no KL constraint
+    use_sde: true  # Default to no SDE
+    sde_sample_freq: 4
+    target_kl: 0.01  # Default is no KL constraint
     vf_coef: 0.75
     ent_coef: 0.01
     max_grad_norm: 2.0
-    # policy_kwargs:
-    #   net_arch:  # Policy architecture
-    #     pi: [64, 64]
-    #     vf: [64, 64]
-    #   activation_fn: relu  # Default activation function
+    policy_kwargs:
+      net_arch: [256, 256] # 256,256
+      ortho_init: true # true
+      activation_fn: relu  # Default activation function relu
 
 training:
   total_timesteps: 12_000_000
@@ -42,3 +41,5 @@ logging:
   log_dir: ./logs/
   verbose: 1
   tensorboard: ./ppo/logs/
+
+# python -m ppo.ppo --config configs/ppo_hockey.yaml --train -q --n_envs 64 --policy_kwargs '{"net_arch": [256, 256], "ortho_init": true, "activation_fn": "relu"}'
