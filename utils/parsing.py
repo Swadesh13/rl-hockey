@@ -114,6 +114,10 @@ def parse_args():
         "--use_sde", action="store_true", help="Override use of State Dependent Exploration"
     )
     parser.add_argument(
+        "--sde_sample_freq", type=int, default=-1, help="Sample a new noise matrix every n steps when using gSDE"
+    )
+    
+    parser.add_argument(
         "--target_kl", type=float, default=None, help="Override target KL divergence"
     )
     parser.add_argument(
@@ -201,6 +205,8 @@ def override_args(config, args):
         hyperparams["normalize_advantage"] = args.normalize_advantage
     if args.use_sde:
         hyperparams["use_sde"] = args.use_sde
+    if args.sde_sample_freq:
+        hyperparams["sde_sample_freq"] = args.sde_sample_freq
     if args.target_kl is not None:
         hyperparams["target_kl"] = args.target_kl
     if args.policy_kwargs is not None:

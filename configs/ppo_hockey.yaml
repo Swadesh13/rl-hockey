@@ -19,12 +19,13 @@ model:
     gae_lambda: 0.9
     clip_range: 0.1
     clip_range_vf: null  # Default is no clipping
-    normalize_advantage: true  # Default normalization
+    normalize_advantage: false  # Default normalization
     use_sde: false  # Default to no SDE
+    sde_sample_freq: -1
     target_kl: null  # Default is no KL constraint
-    vf_coef: 0.5
+    vf_coef: 0.75
     ent_coef: 0.01
-    max_grad_norm: 0.5
+    max_grad_norm: 2.0
     # policy_kwargs:
     #   net_arch:  # Policy architecture
     #     pi: [64, 64]
@@ -32,7 +33,7 @@ model:
     #   activation_fn: relu  # Default activation function
 
 training:
-  total_timesteps: 10_000_000
+  total_timesteps: 12_000_000
   log_interval: 1
   model_path: ppo/models/ppo_test
   save_model_every: 50_000
