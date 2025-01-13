@@ -9,7 +9,7 @@ class ExperienceMemory(ReplayBuffer):
 
     def add(self, *args, **kwargs):
         super().add(*args, **kwargs)
-        if self.full:
+        if len(self.experience) == self.buffer_size:
             self.experience[(self.pos - 1) % self.buffer_size] = 1
         else:
             self.experience = np.append(self.experience, 1)
@@ -31,7 +31,7 @@ class PrioritizedMemory(ReplayBuffer):
     def add(self, *args, **kwargs):
         super().add(*args, **kwargs)
         max_priority = max(self.priorities) if len(self.priorities) else 1.0
-        if self.full:
+        if len(self.priorities) == self.buffer_size:
             self.priorities[(self.pos - 1) % self.buffer_size] = max_priority
         else:
             self.priorities.append(max_priority)
