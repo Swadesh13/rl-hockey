@@ -34,7 +34,7 @@ model:
 training:
   total_timesteps: 40_000_000
   log_interval: 1
-  model_path: ppo/models/ppo_test
+  model_path: models/ppo/ppo_vanilla_rew10stable
   save_model_every: 50_000
 
 logging:

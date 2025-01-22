@@ -5,11 +5,12 @@ import numpy as np
 import torch
 from stable_baselines3 import TD3
 
+from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
 from utils.parsing import *
-from henv.hockey_agent import HockeyAgent
 
-class HockeyTD3Agent(HockeyAgent):
+
+class TD3_HockeyAgent(HockeyAgent):
     def __init__(self, env, config):
         """
         Initializes the TD3 agent for the Hockey environment.
@@ -96,11 +97,11 @@ if __name__ == "__main__":
         print_config(cfg)
         print_args(args)
 
-    from env import HockeyEnv_SB3
+    from henv.env import HockeyEnv_SB3
 
     env = HockeyEnv_SB3.make_vec_env(n_envs=cfg.environment.n_envs)
 
-    agent = HockeyTD3Agent(env, config=cfg)
+    agent = TD3_HockeyAgent(env, config=cfg)
 
     if args.train:
         agent.train(total_timesteps=cfg.training.total_timesteps)

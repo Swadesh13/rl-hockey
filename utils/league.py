@@ -1,9 +1,16 @@
 import os
 from glob import glob
 from typing import List
+
 import numpy as np
-from henv.env import HockeyEnv_SB3, BasicOpponent
-from utils.parsing import save_config, get_default_ppo_config, get_default_sac_config, get_default_td3_config
+
+from henv.env import BasicOpponent, HockeyEnv_SB3
+from utils.parsing import (
+    get_default_ppo_config,
+    get_default_sac_config,
+    get_default_td3_config,
+    save_config,
+)
 
 
 class LeagueHockeyEnv(HockeyEnv_SB3):
@@ -86,7 +93,14 @@ class League:
         elif info["winner"] == 1:
             self.update_scores(2.0)
 
-    def train_agent_league(self, rounds, eval_rounds=1, update_opp_every_rounds=5, show_score_rounds=1, **train_kwargs):
+    def train_agent_league(
+        self,
+        rounds,
+        eval_rounds=1,
+        update_opp_every_rounds=5,
+        show_score_rounds=1,
+        **train_kwargs,
+    ):
         print("Starting League...")
 
         for i in range(1, rounds + 1):
@@ -139,20 +153,54 @@ def load_saved_models(sac=False, td3=False, ppo=False, env=None, cfg=[]):
     if sac:
         from sac.sac import SAC_HockeyAgent
 
-        models.extend(list(_load(env, cfg[0] if cfg else get_default_sac_config(), "models/sac/*.zip", SAC_HockeyAgent)))
+        models.extend(
+            list(
+                _load(
+                    env,
+                    cfg[0] if cfg else get_default_sac_config(),
+                    "models/sac/*.zip",
+                    SAC_HockeyAgent,
+                )
+            )
+        )
     if td3:
-        from td3.td3 import TD3_HockeyAgent
+        from td3.td3_hockey import TD3_HockeyAgent
 
-        models.extend(list(_load(env, cfg[1] if len(cfg) == 2 else get_default_td3_config(), "models/td3/*.zip", TD3_HockeyAgent)))
+        models.extend(
+            list(
+                _load(
+                    env,
+                    cfg[1] if len(cfg) == 2 else get_default_td3_config(),
+                    "models/td3/*.zip",
+                    TD3_HockeyAgent,
+                )
+            )
+        )
     if ppo:
         from ppo.ppo import PPO_HockeyAgent
 
-        models.extend(list(_load(env, cfg[2] if len(cfg) == 3 else get_default_ppo_config(), "models/ppo/*.zip", PPO_HockeyAgent)))
+        models.extend(
+            list(
+                _load(
+                    env,
+                    cfg[2] if len(cfg) == 3 else get_default_ppo_config(),
+                    "models/ppo/*.zip",
+                    PPO_HockeyAgent,
+                )
+            )
+        )
     return models
 
 
 if __name__ == "__main__":
-    from utils.parsing import parse_args, get_config_from_args, print_config, print_args, save_config
+
+    from utils.parsing import (
+        get_config_from_args,
+        parse_args,
+        print_args,
+        print_config,
+        save_config,
+    )
 
     args = parse_args()
     cfg = get_config_from_args(args, cfgnode=True)
@@ -163,13 +211,21 @@ if __name__ == "__main__":
 
     from henv.env import HockeyEnv_SB3
 
-    env = HockeyEnv_SB3(False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier)
+    env = HockeyEnv_SB3(
+        False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier
+    )
 
-    from sac.sac import HockeySACAgent
+    CURRENT_MAIN = "ppo"
+    if CURRENT_MAIN == "sac":
+        from sac.sac import SAC_HockeyAgent as Agent
+    elif CURRENT_MAIN == "ppo":
+        from ppo.ppo import PPO_HockeyAgent as Agent
+    elif CURRENT_MAIN == "td3":
+        from td3.td3_hockey import TD3_HockeyAgent as Agent
 
-    agent = HockeySACAgent(env, cfg)
+    agent = Agent(env, cfg)
     # Load the agent as well
-    agent_copy = HockeySACAgent(env, cfg)
+    agent_copy = Agent(env, cfg)
 
     league = League(
         agent,
@@ -178,4 +234,6 @@ if __name__ == "__main__":
         reward_multiplier=cfg.environment.reward_multiplier,
     )
 
-    league.train_agent_league(10, 2, 5, total_timesteps=1000, log_interval=cfg.training.log_interval)
+    league.train_agent_league(
+        10, 2, 5, total_timesteps=1000, log_interval=cfg.training.log_interval
+    )
