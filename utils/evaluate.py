@@ -5,7 +5,12 @@ from henv.env import BasicOpponent
 
 
 def eval_agent(
-    player_left, opponent_right=None, env=None, num_episodes=10, render_mode="human"
+    player_left,
+    opponent_right=None,
+    env=None,
+    num_episodes=10,
+    render_mode="human",
+    modes=["NORMAL"],
 ):
     """
     Runs an agent in a Hockey environment for a specified number of episodes.
@@ -16,6 +21,7 @@ def eval_agent(
     - env: The environment to run the agent in. (default is HockeyEnv)
     - num_episodes: Number of episodes to run the simulation (default is 10).
     - render_mode: Mode for rendering the environment (default is "human", other option "rgb_array").
+    - modes: List of modes to cycle through during evaluation (e.g., ["NORMAL", "TRAIN_SHOOTING", "TRAIN_DEFENSE"]).
 
     Returns:
     - mean_reward: Mean reward over all episodes.
@@ -28,8 +34,17 @@ def eval_agent(
         env = h_env.HockeyEnv()
 
     total_rewards = []
+    episodes_per_mode = num_episodes // len(modes)
 
     for episode in range(num_episodes):
+        # Determine the mode based on the episode range
+        mode_idx = episode // episodes_per_mode
+        if mode_idx >= len(modes):
+            mode_idx = len(modes) - 1
+        mode = modes[mode_idx]
+        env.reset(mode=mode)  # Reset environment with the new mode
+        print(f"Starting Episode {episode + 1} in Mode: {mode}")
+
         obs, info = env.reset()
         obs_agent2 = env.obs_agent_two()
         episode_reward = 0

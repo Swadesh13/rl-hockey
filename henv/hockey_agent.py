@@ -61,7 +61,11 @@ class HockeyAgent:
             print("Training complete.")
 
     def evaluate(
-        self, num_episodes: int = 10, render_mode: str = "human", opponent_right=None
+        self,
+        num_episodes: int = 10,
+        render_mode: str = "human",
+        opponent_right=None,
+        modes=["NORMAL"],
     ):
         """
         Evaluates the trained model in the environment.
@@ -70,6 +74,7 @@ class HockeyAgent:
         - num_episodes: Number of episodes to evaluate (overrides config if provided).
         - render_mode: Mode for rendering the environment (overrides config if provided).
         - opponent_right: Optional opponent for the evaluation.
+        - modes: List of modes to cycle through during evaluation (e.g., ["NORMAL", "TRAIN_SHOOTING", "TRAIN_DEFENSE"]).
 
         Returns:
         - mean_reward: Mean reward over all episodes.
@@ -82,6 +87,7 @@ class HockeyAgent:
             opponent_right=opponent_right,
             num_episodes=num_episodes,
             render_mode=render_mode,
+            modes=modes,
         )
 
     def save(self, save_path: str = None):
