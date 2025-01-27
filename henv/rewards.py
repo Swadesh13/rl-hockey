@@ -50,6 +50,17 @@ def puck_throw_angle(obs, h_env):
     return 0
 
 
+def puck_intercept(obs):
+    # consider elastic collisions with constant velocity - calculate if at present angle puck can be shot
+    if obs[16]:
+        x1, y1, a1 = obs[0], obs[1], obs[2]
+        x2, y2 = obs[6], obs[7]
+        d = abs((x2 - x1) * np.sin(a1) - (y2 - y1) * np.cos(a1))
+        if d < 1:
+            return d - 1
+    return 0
+
+
 def pred_distance_from_puck(obs):
     if obs[14] < 0 and obs[12] > 0 and obs[-1] == 0:
         m = obs[15] / obs[14]
@@ -72,4 +83,5 @@ def get_additional_rewards(obs, h_env=Henv):
     rewards["puck_throw_angle"] = puck_throw_angle(obs, h_env)
     rewards["pred_dist_from_puck"] = pred_distance_from_puck(obs)
     rewards["puck_infront"] = puck_infront(obs)
+    rewards["puck_intercept"] = puck_intercept(obs)
     return rewards
