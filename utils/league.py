@@ -1,9 +1,7 @@
 import os
 from glob import glob
 from typing import List
-
 import numpy as np
-
 from henv.env import BasicOpponent, HockeyEnv_SB3
 from utils.parsing import (
     get_default_ppo_config,
@@ -33,7 +31,7 @@ class League:
     Creates a league where a main agent trains against multiple opponents.
     """
 
-    def __init__(self, agent, opponents: List = [], save_dir=None, **env_args):
+    def __init__(self, agent, opponents: List = [], save_dir=None, max_score=None, **env_args):
         self.save_dir = save_dir
         if not self.save_dir:
             self.save_dir = f"./logs/league_{len(glob('./logs/league_*'))}"
@@ -61,15 +59,23 @@ class League:
         self.scores = [0] * len(self.opponents)
 
         self.curr_idx = None
+        self.max_score = max_score
 
     def sample_opponent(self):
         probs = np.array(self.scores)
         if all(probs == np.max(probs)):
             self.curr_idx = np.random.choice(len(self.opponents))
         else:
-            probs = np.max(probs) - probs
-            probs = probs / np.sum(probs)
-            self.curr_idx = np.random.choice(len(self.opponents), p=probs)
+            if 0 in probs:
+                self.curr_idx = np.random.choice(np.argwhere(probs == 0).flatten())
+            else:
+                probs = np.max(probs) - probs
+                if self.max_score:
+                    mask = np.where(np.array(self.scores) >= self.max_score, 0, 1)
+                    if sum(mask):
+                        probs *= mask
+                probs = probs / np.sum(probs)
+                self.curr_idx = np.random.choice(len(self.opponents), p=probs)
         return self.opponents[self.curr_idx]
 
     def update_scores(self, score):
@@ -193,7 +199,6 @@ def load_saved_models(sac=False, td3=False, ppo=False, env=None, cfg=[]):
 
 
 if __name__ == "__main__":
-
     from utils.parsing import (
         get_config_from_args,
         parse_args,
