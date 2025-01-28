@@ -5,7 +5,7 @@ environment:
   n_envs: 4
   seed: 42
   reward_multiplier: 10
-  additional_rewards: []
+  additional_rewards: ["puck_infront", "pred_dist_from_puck", "puck_positional", "defensive_play", "momentum_control", "blocking"]
 
 model:
   name: ppo

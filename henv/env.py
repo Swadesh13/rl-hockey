@@ -1,8 +1,10 @@
 from typing import List
-from gymnasium import spaces
+
 import numpy as np
+from gymnasium import spaces
 from hockey import hockey_env
 from stable_baselines3.common.env_util import make_vec_env
+
 from henv.rewards import filter_reward, get_additional_rewards
 
 
@@ -15,7 +17,12 @@ class BasicOpponent(hockey_env.BasicOpponent):
 
 
 class HockeyEnv_SB3(hockey_env.HockeyEnv):
-    def __init__(self, weak_opponent: bool = False, additional_rewards: List[str] = None, reward_multiplier: float = 1.0):
+    def __init__(
+        self,
+        weak_opponent: bool = False,
+        additional_rewards: List[str] = None,
+        reward_multiplier: float = 1.0,
+    ):
         # Initialize the parent class with the weak_opponent parameter
         super().__init__()
         self.opponent = BasicOpponent(weak=weak_opponent)
@@ -24,10 +31,26 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
 
         # Check if additional_rewards contains only known reward types
         if additional_rewards:
-            d = set(additional_rewards).difference(set(["puck_throw_angle", "pred_dist_from_puck", "puck_infront", "puck_intercept"]))
+            d = set(additional_rewards).difference(
+                set(
+                    [
+                        "puck_throw_angle",
+                        "pred_dist_from_puck",
+                        "puck_infront",
+                        "puck_intercept",
+                        "puck_positional",
+                        "defensive_play",
+                        "momentum_control",
+                        "blocking",
+                    ]
+                )
+            )
             assert len(d) == 0, f"Unknown additional reward: {d}"
         self.additional_rewards = additional_rewards
         self.reward_multiplier = reward_multiplier
+        print(
+            f"Additional rewards: {additional_rewards}, Reward multiplier: {reward_multiplier}"
+        )
 
     def step(self, action):
         ob2 = self.obs_agent_two()
@@ -54,7 +77,12 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
         return super().reset(one_starting, mode)
 
     @staticmethod
-    def make_vec_env(n_envs: int = 1, weak_opponent: bool = False, additional_rewards: List[str] = None, reward_multiplier: float = 1.0):
+    def make_vec_env(
+        n_envs: int = 1,
+        weak_opponent: bool = False,
+        additional_rewards: List[str] = None,
+        reward_multiplier: float = 1.0,
+    ):
         """
         Create and return a vectorized version of the HockeyEnv_SB3 environment.
 
@@ -68,6 +96,10 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
         """
 
         def create_env():
-            return HockeyEnv_SB3(weak_opponent=weak_opponent, additional_rewards=additional_rewards, reward_multiplier=reward_multiplier)
+            return HockeyEnv_SB3(
+                weak_opponent=weak_opponent,
+                additional_rewards=additional_rewards,
+                reward_multiplier=reward_multiplier,
+            )
 
         return make_vec_env(create_env, n_envs=n_envs)
