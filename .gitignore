@@ -179,3 +179,5 @@ cython_debug/
 PPOGridSearch.*
 grid_jobs_ppo*
 activate_env.sh
+ppo_overnight.sh
+grid_policy_kwargs.sh
