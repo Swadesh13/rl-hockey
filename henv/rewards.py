@@ -1,6 +1,7 @@
 # Custom rewards based on current obs
-import numpy as np
 import math
+
+import numpy as np
 
 
 class Henv:
@@ -18,7 +19,15 @@ class Henv:
     MAX_TIME_KEEP_PUCK = 15
     GOAL_SIZE = 75
 
-    RACKETPOLY = [(-10, 20), (+5, 20), (+5, -20), (-10, -20), (-18, -10), (-21, 0), (-18, 10)]
+    RACKETPOLY = [
+        (-10, 20),
+        (+5, 20),
+        (+5, -20),
+        (-10, -20),
+        (-18, -10),
+        (-21, 0),
+        (-18, 10),
+    ]
     RACKETFACTOR = 1.2
 
     FORCEMULTIPLIER = 6000
@@ -50,12 +59,25 @@ def puck_throw_angle(obs, h_env):
     return 0
 
 
+def puck_intercept(obs):
+    # consider elastic collisions with constant velocity - calculate if at present angle puck can be shot
+    if obs[16]:
+        x1, y1, a1 = obs[0], obs[1], obs[2]
+        x2, y2 = obs[6], obs[7]
+        d = abs((x2 - x1) * np.sin(a1) - (y2 - y1) * np.cos(a1))
+        if d < 1:
+            return d - 1
+    return 0
+
+
 def pred_distance_from_puck(obs):
     if obs[14] < 0 and obs[12] > 0 and obs[-1] == 0:
         m = obs[15] / obs[14]
         a = -m
         c = m * obs[12] - obs[13]
-        if a * -1 + 3 + c > 0 and a * -1 + -3 + c < 0:  # only if puck is predicted to be in this region
+        if (
+            a * -1 + 3 + c > 0 and a * -1 + -3 + c < 0
+        ):  # only if puck is predicted to be in this region
             d = abs(a * obs[0] + obs[1] + c) / (m**2 + 1)
             return -d / 8
     return 0
@@ -67,9 +89,76 @@ def puck_infront(obs):
     return 0
 
 
+def puck_positional(obs, h_env):
+    """
+    Reward for maintaining a strategic position relative to the puck and goal.
+    """
+    player_x, player_y = obs[0], obs[1]
+    puck_x, puck_y = obs[12], obs[13]
+    goal_x = h_env.W if puck_x > h_env.CENTER_X else 0  # Opponent's goal
+
+    # Encourage proximity to the puck
+    dist_to_puck = np.sqrt((player_x - puck_x) ** 2 + (player_y - puck_y) ** 2)
+    positional_reward = -dist_to_puck * 0.1  # Scale factor
+
+    # Reward for staying between puck and goal
+    between_puck_goal = 1 if (puck_x - player_x) * (goal_x - player_x) < 0 else 0
+    positional_reward += between_puck_goal * 0.5
+
+    return positional_reward
+
+
+def defensive_play(obs):
+    """
+    Reward for preventing goals or deflecting the puck away from the goal.
+    """
+    puck_x, puck_vx = obs[12], obs[14]
+    goal_x = 0 if puck_x < Henv.CENTER_X else Henv.W
+
+    # Penalize if puck is moving toward the agent's goal
+    if (goal_x == 0 and puck_vx < 0) or (goal_x == Henv.W and puck_vx > 0):
+        return -0.5  # Negative reward for danger
+    return 0.2  # Positive reward for safe play
+
+
+def momentum_control(obs):
+    """
+    Penalize erratic movement and reward smooth, controlled gameplay.
+    """
+    linear_speed = np.linalg.norm(obs[3:5])  # Player linear velocity
+    angular_speed = abs(obs[5])  # Player angular velocity
+
+    # Reward staying within reasonable speed/rotation
+    if linear_speed < 5 and angular_speed < 2:
+        return 0.2  # Encourage smooth control
+    else:
+        return -0.2  # Penalize excessive movement
+
+
+def blocking(obs, h_env):
+    """
+    Reward for intercepting the puck near the agent's own goal.
+    """
+    puck_x, puck_y, puck_vx = obs[12], obs[13], obs[14]
+    goal_x = 0 if puck_x < h_env.CENTER_X else h_env.W
+    player_x, player_y = obs[0], obs[1]
+
+    # Reward if the agent is near the puck and the puck is heading toward its goal
+    if (goal_x == 0 and puck_vx < 0) or (goal_x == h_env.W and puck_vx > 0):
+        dist_to_puck = np.sqrt((puck_x - player_x) ** 2 + (puck_y - player_y) ** 2)
+        if dist_to_puck < 0.5:
+            return 0.3
+    return 0
+
+
 def get_additional_rewards(obs, h_env=Henv):
     rewards = {}
     rewards["puck_throw_angle"] = puck_throw_angle(obs, h_env)
     rewards["pred_dist_from_puck"] = pred_distance_from_puck(obs)
     rewards["puck_infront"] = puck_infront(obs)
+    rewards["puck_intercept"] = puck_intercept(obs)
+    rewards["puck_positional"] = puck_positional(obs, h_env)
+    rewards["defensive_play"] = defensive_play(obs)
+    rewards["momentum_control"] = momentum_control(obs)
+    rewards["blocking"] = blocking(obs, h_env)
     return rewards

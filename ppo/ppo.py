@@ -1,5 +1,9 @@
 import os
+
+# from datetime import datetime
+import random
 import sys
+import time
 from glob import glob
 
 import numpy as np
@@ -12,9 +16,6 @@ from henv.env import HockeyEnv_SB3
 from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
 from utils.parsing import *
-# from datetime import datetime
-import random
-import time
 
 
 class PPO_HockeyAgent(HockeyAgent):
@@ -37,12 +38,14 @@ class PPO_HockeyAgent(HockeyAgent):
 
         policy_kwargs = self.config.model.hyperparameters.get("policy_kwargs", {})
         policy_kwargs = cfg_node_to_dict(policy_kwargs)
-        policy_kwargs["activation_fn"] = get_activation_fn_from_str(policy_kwargs["activation_fn"])
+        policy_kwargs["activation_fn"] = get_activation_fn_from_str(
+            policy_kwargs["activation_fn"]
+        )
 
         # Remove `policy_kwargs` from hyperparameters to avoid duplication
         hyperparameters = self.config.model.hyperparameters.copy()
         hyperparameters.pop("policy_kwargs", None)
-        
+
         self.model = PPO(
             "MlpPolicy",
             self.env,
@@ -81,7 +84,12 @@ if __name__ == "__main__":
 
     from henv.env import HockeyEnv_SB3
 
-    env = HockeyEnv_SB3.make_vec_env(n_envs=cfg.environment.n_envs)
+    env = HockeyEnv_SB3.make_vec_env(
+        n_envs=cfg.environment.n_envs,
+        weak_opponent=False,
+        additional_rewards=cfg.environment.additional_rewards,
+        reward_multiplier=cfg.environment.reward_multiplier,
+    )
 
     agent = PPO_HockeyAgent(env, config=cfg)
 
@@ -96,6 +104,7 @@ if __name__ == "__main__":
             name_prefix="ppo_model",
         )
 
+        print("creating eval env")
         eval_env = Monitor(HockeyEnv_SB3())
         eval_callback = EvalCallback(
             eval_env,
@@ -122,4 +131,5 @@ if __name__ == "__main__":
             num_episodes=args.eval_episodes,
             render_mode="human" if not args.no_render else "rgb_array",
             opponent_right=None,
+            modes=["NORMAL", "TRAIN_SHOOTING", "TRAIN_DEFENSE"],
         )

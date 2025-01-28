@@ -2,7 +2,7 @@ environment:
   n_envs: 1
   seed: 42
   render_mode: "human"
-  env_name: "Hockey-v0"
+  env_name: "Pendulum-v1"
   
 model:
   name: "td3"  # Could be "td3", "sac", etc.
@@ -12,7 +12,7 @@ model:
     mean: 0.0
     sigma: 0.1
   hyperparameters:
-    env: "Hockey-v0"
+    env: "Pendulum-v1"
     policy: "MlpPolicy" # 
     buffer_size: 200000  # size of the replay buffer
     learning_starts: 10000  # how many steps of the model to collect transitions for before learning starts
@@ -36,7 +36,7 @@ model:
 training:
   total_timesteps: 500000
   save_model_every: 10000
-  model_path: "td3/models/td3_hockey"
+  model_path: "td3/models/td3_pendulum"
 
 logging:
   log_dir: "./logs/"

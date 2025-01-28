@@ -1,8 +1,8 @@
 import argparse
 
+import torch.nn as nn
 import yaml
 from fvcore.common.config import CfgNode
-import torch.nn as nn
 
 
 def parse_args():
@@ -39,6 +39,18 @@ def parse_args():
     )
 
     # Override arguments
+    parser.add_argument(
+        "--reward_multiplier",
+        type=float,
+        default=None,
+        help="Override the reward multiplier",
+    )
+    parser.add_argument(
+        "--additional_rewards",
+        type=str,
+        default=None,
+        help="Override additional rewards as a comma-separated list",
+    )
     parser.add_argument(
         "--env_name", type=str, default=None, help="Override the environment name"
     )
@@ -106,23 +118,36 @@ def parse_args():
         "--max_grad_norm", type=float, default=None, help="Override max gradient norm"
     )
     parser.add_argument(
-        "--clip_range_vf", type=float, default=None, help="Override clip range for the value function"
+        "--clip_range_vf",
+        type=float,
+        default=None,
+        help="Override clip range for the value function",
     )
     parser.add_argument(
-        "--normalize_advantage", action="store_true", help="Override to normalize advantage"
+        "--normalize_advantage",
+        action="store_true",
+        help="Override to normalize advantage",
     )
     parser.add_argument(
-        "--use_sde", action="store_true", help="Override use of State Dependent Exploration"
+        "--use_sde",
+        action="store_true",
+        help="Override use of State Dependent Exploration",
     )
     parser.add_argument(
-        "--sde_sample_freq", type=int, default=-1, help="Sample a new noise matrix every n steps when using gSDE"
+        "--sde_sample_freq",
+        type=int,
+        default=-1,
+        help="Sample a new noise matrix every n steps when using gSDE",
     )
-    
+
     parser.add_argument(
         "--target_kl", type=float, default=None, help="Override target KL divergence"
     )
     parser.add_argument(
-        "--policy_kwargs", type=str, default=None, help="Override policy keyword arguments as JSON"
+        "--policy_kwargs",
+        type=str,
+        default=None,
+        help="Override policy keyword arguments as JSON",
     )
 
     return parser.parse_args()
@@ -178,6 +203,14 @@ def override_args(config, args):
     if args.verbose is not None:
         config["logging"]["verbose"] = args.verbose
 
+    # Reward-related overrides
+    if args.reward_multiplier is not None:
+        config["environment"]["reward_multiplier"] = args.reward_multiplier
+    if args.additional_rewards is not None:
+        config["environment"]["additional_rewards"] = [
+            reward.strip() for reward in args.additional_rewards.split(",")
+        ]
+
     # Hyperparameters overrides
     hyperparams = config["model"]["hyperparameters"]
     if args.learning_rate is not None:
@@ -212,10 +245,13 @@ def override_args(config, args):
         hyperparams["target_kl"] = args.target_kl
     if args.policy_kwargs is not None:
         import json
+
         try:
             hyperparams["policy_kwargs"] = json.loads(args.policy_kwargs)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON format for policy_kwargs: {args.policy_kwargs}. Error: {e}")
+            raise ValueError(
+                f"Invalid JSON format for policy_kwargs: {args.policy_kwargs}. Error: {e}"
+            )
 
     return config
 
@@ -273,6 +309,7 @@ def print_args(args):
         if value is not None:
             print(f"{arg}: {value}")
     print("-" * 30)
+
 
 def get_activation_fn_from_str(activation_fn_str):
     """

@@ -75,9 +75,11 @@ class SAC_PM(SAC):
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
             with th.no_grad():
+                td_error = np.zeros(target_q_values.shape[0])
                 # print(current_q_values)
-                td_error = th.abs(current_q_values[np.random.choice(len(current_q_values), 1)[0]] - target_q_values)
-            self.replay_buffer.update_priorities(indices, td_error.cpu().numpy().flatten())
+                for q in current_q_values:
+                    td_error += th.abs(q - target_q_values).cpu().numpy().flatten() / len(current_q_values)
+            self.replay_buffer.update_priorities(indices, td_error)
 
             # Compute critic loss
             critic_loss = 0.5 * sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
