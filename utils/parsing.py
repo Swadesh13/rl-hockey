@@ -149,6 +149,12 @@ def parse_args():
         default=None,
         help="Override policy keyword arguments as JSON",
     )
+    parser.add_argument(
+        "--noise",
+        type=str,
+        default=None,
+        help="Override the noise type (e.g., 'pink', 'brown', 'white', 'gaussian', 'ornstein', or 'null' for no noise).",
+    )
 
     return parser.parse_args()
 
@@ -252,6 +258,12 @@ def override_args(config, args):
             raise ValueError(
                 f"Invalid JSON format for policy_kwargs: {args.policy_kwargs}. Error: {e}"
             )
+    # Noise override
+    if args.noise is not None:
+        if args.noise.lower() == "null":
+            config["model"]["noise"] = None  # No noise applied
+        else:
+            config["model"]["noise"] = args.noise.lower()
 
     return config
 

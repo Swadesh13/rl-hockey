@@ -1,7 +1,9 @@
 import os
 from glob import glob
 from typing import List
+
 import numpy as np
+
 from henv.env import BasicOpponent, HockeyEnv_SB3
 from utils.parsing import (
     get_default_ppo_config,
@@ -31,7 +33,9 @@ class League:
     Creates a league where a main agent trains against multiple opponents.
     """
 
-    def __init__(self, agent, opponents: List = [], save_dir=None, max_score=None, **env_args):
+    def __init__(
+        self, agent, opponents: List = [], save_dir=None, max_score=None, **env_args
+    ):
         self.save_dir = save_dir
         if not self.save_dir:
             self.save_dir = f"./logs/league_{len(glob('./logs/league_*'))}"

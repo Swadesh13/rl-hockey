@@ -11,10 +11,15 @@ import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
+from stable_baselines3.common.noise import (
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise,
+)
 
 from henv.env import HockeyEnv_SB3
 from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
+from utils.noise import ColoredActionNoise, ColoredNoiseProcess
 from utils.parsing import *
 
 
@@ -28,6 +33,7 @@ class PPO_HockeyAgent(HockeyAgent):
         - config: Configuration node (CfgNode).
         """
         super().__init__(env, config)
+
         tnsr_dir = self.config.logging.tensorboard
         time.sleep(np.random.uniform(0, 15))
         self.save_dir = f"{tnsr_dir}PPO_{len(glob(f'{tnsr_dir}PPO_*'))}"
@@ -36,6 +42,14 @@ class PPO_HockeyAgent(HockeyAgent):
         print("Saving files at:", self.save_dir)
         os.makedirs(self.save_dir, exist_ok=True)
 
+        # Initialize noise
+        self.noise = None
+        noise_type = config.model.get("noise", None)  # Get noise type as a string
+        if noise_type:
+            self.noise = self._initialize_noise(noise_type, env)
+            print(f"Initialized noise: {self.noise}")
+
+        # Initialize policy kwargs
         policy_kwargs = self.config.model.hyperparameters.get("policy_kwargs", {})
         policy_kwargs = cfg_node_to_dict(policy_kwargs)
         policy_kwargs["activation_fn"] = get_activation_fn_from_str(
@@ -62,6 +76,21 @@ class PPO_HockeyAgent(HockeyAgent):
         # save the configuration
         save_config(os.path.join(self.save_dir, "config.yaml"), self.config)
 
+    def train(
+        self,
+        total_timesteps=None,
+        log_interval=None,
+        progress_bar=False,
+        callbacks=None,
+    ):
+        """
+        Overrides the train method to include optional action noise.
+        """
+        if self.noise:
+            print(f"Applying noise: {self.noise}")
+            self.model.policy.noise = self.noise  # Add noise to policy during training
+        super().train(total_timesteps, log_interval, progress_bar, callbacks)
+
     def load(self, load_path=None):
         """
         Loads the PPO model.
@@ -72,6 +101,46 @@ class PPO_HockeyAgent(HockeyAgent):
             print(f"Model loaded from {path}")
         else:
             print(f"No model found at {path}. Starting with a new model.")
+
+    def _initialize_noise(self, noise_type, env):
+        """
+        Initializes the appropriate noise type based on the string input.
+
+        Parameters:
+        - noise_type (str): Type of noise (e.g., 'pink', 'brown', 'white', 'gaussian', 'ornstein').
+        - env: The environment instance to get action dimensions.
+
+        Returns:
+        - ActionNoise object or None if no valid noise type is provided.
+        """
+        action_dim = env.action_space.shape[0]  # Default action dimension
+        seq_len = 250  # Fixed sequence length
+        sigma = 0.3
+
+        if noise_type.lower() == "pink":
+            return ColoredActionNoise(
+                beta=1.0, sigma=sigma, seq_len=seq_len, action_dim=action_dim
+            )
+        elif noise_type.lower() == "brown":
+            return ColoredActionNoise(
+                beta=2.0, sigma=sigma, seq_len=seq_len, action_dim=action_dim
+            )
+        elif noise_type.lower() == "white":
+            return ColoredActionNoise(
+                beta=0.0, sigma=sigma, seq_len=seq_len, action_dim=action_dim
+            )
+        elif noise_type.lower() == "gaussian":
+            return NormalActionNoise(
+                mean=np.zeros(action_dim), sigma=sigma * np.ones(action_dim)
+            )
+        elif noise_type.lower() == "ornstein":
+            return OrnsteinUhlenbeckActionNoise(
+                mean=np.zeros(action_dim), sigma=sigma, theta=0.15
+            )
+        else:
+            raise ValueError(
+                f"Unsupported noise type: {noise_type}. Choose from 'pink', 'brown', 'white', 'gaussian', 'ornstein'."
+            )
 
 
 if __name__ == "__main__":
