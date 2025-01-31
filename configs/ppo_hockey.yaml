@@ -4,7 +4,7 @@ environment:
   env_name: Hockey-v0
   n_envs: 4
   seed: 42
-  reward_multiplier: 1
+  reward_multiplier: 10
   additional_rewards: []
 
 model:

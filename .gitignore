@@ -181,7 +181,6 @@ PPOGridSearch.*
 grid_jobs_ppo*
 activate_env.sh
 ppo_overnight.sh
-grid_policy_kwargs.sh
 
 td3/models*/*
-grid_rewards.sh
+grid_*.sh
