@@ -47,6 +47,7 @@ def parse_args():
     )
     parser.add_argument(
         "--additional_rewards",
+        "-ar",
         type=str,
         default=None,
         help="Override additional rewards as a comma-separated list",
