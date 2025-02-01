@@ -110,93 +110,87 @@ def defensive_play(obs):
     player_x, player_y = obs[0], obs[1]
     puck_x, puck_y, puck_vx, puck_vy = obs[12], obs[13], obs[14], obs[15]
     goal_x = 0 if puck_x < Henv.CENTER_X else Henv.W  # Own goal position
-    wall_top = Henv.H / 2  # Top boundary
-    wall_bottom = -Henv.H / 2  # Bottom boundary
+    wall_top = Henv.CENTER_Y  # Fixed top boundary
+    wall_bottom = -Henv.CENTER_Y  # Fixed bottom boundary
 
     # 1. Check if player is between puck and goal (X-direction)
     is_between_x = is_between_puck_and_goal(player_x, puck_x, goal_x)
 
-    # 2. Compute expected puck trajectory (initial)
-    if puck_vx != 0:
+    # 2. Compute expected puck trajectory **before modifying position**
+    if abs(puck_vx) > 1e-5:  # Avoid division by zero
         trajectory_slope = puck_vy / puck_vx  # dy/dx
         trajectory_intercept = puck_y - trajectory_slope * puck_x  # y = mx + b
 
-        # 3. Check for wall reflection
-        if puck_vy > 0:  # Moving upward, may hit the top wall
-            time_to_wall = (
-                wall_top - puck_y
-            ) / puck_vy  # Time until hitting the top wall
-            if time_to_wall > 0:
-                puck_x += puck_vx * time_to_wall
-                puck_y = wall_top
-                puck_vy = -puck_vy  # Reflect downward
-        elif puck_vy < 0:  # Moving downward, may hit the bottom wall
-            time_to_wall = (wall_bottom - puck_y) / puck_vy
-            if time_to_wall > 0:
-                puck_x += puck_vx * time_to_wall
-                puck_y = wall_bottom
-                puck_vy = -puck_vy  # Reflect upward
+        # 3. Estimate trajectory after **one** possible wall bounce
+        expected_puck_y = trajectory_slope * player_x + trajectory_intercept  # Initial prediction
 
-        # 4. Compute new trajectory after bounce
-        trajectory_slope = puck_vy / puck_vx
-        trajectory_intercept = puck_y - trajectory_slope * puck_x
-        expected_puck_y = (
-            trajectory_slope * player_x + trajectory_intercept
-        )  # Where puck will be at player_x
+        # If puck is moving toward a wall, predict bounce
+        if puck_vy > 0 and expected_puck_y > wall_top:
+            puck_vy = -puck_vy  # Reflect downward
+            expected_puck_y = 2 * wall_top - expected_puck_y  # Mirror trajectory
 
-        # 5. Check if player is near this trajectory
-        y_tolerance = 0.3  # Allow some leeway
+        elif puck_vy < 0 and expected_puck_y < wall_bottom:
+            puck_vy = -puck_vy  # Reflect upward
+            expected_puck_y = 2 * wall_bottom - expected_puck_y  # Mirror trajectory
+
+        # 4. Check if player is near this trajectory
+        y_tolerance = 0.5  # Allow more leeway for positioning
         is_on_trajectory = abs(player_y - expected_puck_y) < y_tolerance
     else:
-        is_on_trajectory = (
-            False  # No x velocity, meaning no strong trajectory to predict
-        )
+        is_on_trajectory = False  # No x velocity, no strong trajectory to predict
 
-    # 6. Reward based on positioning and trajectory prediction
+    # 5. Adjust rewards
     if is_between_x and is_on_trajectory:
-        return 0.6  # Strong reward for good positioning even after bounce
+        return 0.5  # Reward for being well-positioned
     elif is_between_x:
-        return 0.3  # Some reward for being in the right x-region
+        return 0.2  # Some reward for being in the right region
     else:
-        return (
-            -0.4
-        )  # Penalty if puck moves toward the goal and player is out of position
+        return -0.2  # Reduce penalty to encourage learning
 
 
 def puck_positional(obs, h_env):
     """
     Reward for maintaining a strategic position relative to the puck and goal.
     - Encourages being between puck and opponent goal.
+    - Reduces unnecessary penalties for minor distance errors.
     """
     player_x, player_y = obs[0], obs[1]
     puck_x, puck_y = obs[12], obs[13]
     goal_x = h_env.W if puck_x > h_env.CENTER_X else 0  # Opponent's goal
 
-    # Encourage proximity to the puck
+    # Encourage proximity to the puck (but reduce harshness)
     dist_to_puck = np.sqrt((player_x - puck_x) ** 2 + (player_y - puck_y) ** 2)
-    positional_reward = -dist_to_puck * 0.05  # Reduced scaling
+    proximity_reward = max(-dist_to_puck * 0.02, -0.5)  # Limit penalty
 
     # Reward for staying between puck and goal
     between_puck_goal = is_between_puck_and_goal(player_x, puck_x, goal_x)
-    positional_reward += between_puck_goal * 0.8  # Increased impact
+    positional_reward = between_puck_goal * 0.5  # Adjusted impact
 
-    return positional_reward
+    # Encourage positioning near the **opponent's** goal (attacking play)
+    attack_positioning = max(0.3 - abs(player_x - goal_x) * 0.1, 0)
+
+    return proximity_reward + positional_reward + attack_positioning
+
 
 
 def momentum_control(obs):
     linear_speed = np.linalg.norm(obs[3:5])  # Player linear velocity
     angular_speed = abs(obs[5])  # Player angular velocity
 
-    # Use a smooth quadratic penalty instead of a fixed penalty
-    penalty = -0.05 * (linear_speed**2 + angular_speed**2)
+    # Smooth penalty that starts low and increases gradually
+    penalty = -0.02 * (linear_speed - 5) ** 2 - 0.02 * (angular_speed - 2) ** 2
 
-    # Reward controlled movement rather than absolute speed constraints
-    reward = 0.2 if linear_speed < 7 and angular_speed < 3 else penalty
+    # Reward for maintaining controlled movement in an optimal range
+    if 3 < linear_speed < 8 and 1 < angular_speed < 4:
+        reward = 0.3  # Reward for smooth controlled movement
+    else:
+        reward = penalty  # Apply smooth penalty
 
     return reward
 
 
-def blocking(obs, h_env):
+
+def blocking(obs, h_env): #gut
     """
     Reward for intercepting the puck near the agent's own goal.
     """
