@@ -33,14 +33,9 @@ class PPO_HockeyAgent(HockeyAgent):
         - config: Configuration node (CfgNode).
         """
         super().__init__(env, config)
+        self.use_rnd = config.rnd.enabled
 
-        tnsr_dir = self.config.logging.tensorboard
-        time.sleep(np.random.uniform(0, 15))
-        self.save_dir = f"{tnsr_dir}PPO_{len(glob(f'{tnsr_dir}PPO_*'))}"
-        # current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        # self.save_dir = f"{tnsr_dir}PPO_{current_time}"
-        print("Saving files at:", self.save_dir)
-        os.makedirs(self.save_dir, exist_ok=True)
+        self._create_logging_dir()
 
         # Initialize noise
         self.noise = None
@@ -55,6 +50,10 @@ class PPO_HockeyAgent(HockeyAgent):
         policy_kwargs["activation_fn"] = get_activation_fn_from_str(
             policy_kwargs["activation_fn"]
         )
+        # if self.use_rnd:
+        #     policy_kwargs["net_arch"] = [
+        #         dict(vf=[256, 256], pi=[256, 256])
+        #     ]  # Two heads
 
         # Remove `policy_kwargs` from hyperparameters to avoid duplication
         hyperparameters = self.config.model.hyperparameters.copy()
@@ -89,6 +88,7 @@ class PPO_HockeyAgent(HockeyAgent):
         if self.noise:
             print(f"Applying noise: {self.noise}")
             self.model.policy.noise = self.noise  # Add noise to policy during training
+
         super().train(total_timesteps, log_interval, progress_bar, callbacks)
 
     def load(self, load_path=None):
@@ -142,6 +142,16 @@ class PPO_HockeyAgent(HockeyAgent):
                 f"Unsupported noise type: {noise_type}. Choose from 'pink', 'brown', 'white', 'gaussian', 'ornstein'."
             )
 
+    def _create_logging_dir(self):
+        """
+        Creates a logging directory for the PPO agent.
+        """
+        tnsr_dir = self.config.logging.tensorboard
+        time.sleep(np.random.uniform(0, 15))
+        self.save_dir = f"{tnsr_dir}PPO_{len(glob(f'{tnsr_dir}PPO_*'))}"
+        print("Saving files at:", self.save_dir)
+        os.makedirs(self.save_dir, exist_ok=True)
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -151,14 +161,23 @@ if __name__ == "__main__":
         print_config(cfg)
         print_args(args)
 
-    from henv.env import HockeyEnv_SB3
+    from henv.env import HockeyEnv_SB3, HockeyEnv_SB3_RND
 
-    env = HockeyEnv_SB3.make_vec_env(
-        n_envs=cfg.environment.n_envs,
-        weak_opponent=False,
-        additional_rewards=cfg.environment.additional_rewards,
-        reward_multiplier=cfg.environment.reward_multiplier,
-    )
+    if cfg.rnd.enabled:
+        env = HockeyEnv_SB3_RND.make_vec_env_rnd(
+            n_envs=cfg.environment.n_envs,
+            config=cfg,
+            weak_opponent=False,
+            additional_rewards=cfg.environment.additional_rewards,
+            reward_multiplier=cfg.environment.reward_multiplier,
+        )
+    else:
+        env = HockeyEnv_SB3.make_vec_env(
+            n_envs=cfg.environment.n_envs,
+            weak_opponent=False,
+            additional_rewards=cfg.environment.additional_rewards,
+            reward_multiplier=cfg.environment.reward_multiplier,
+        )
 
     agent = PPO_HockeyAgent(env, config=cfg)
 
