@@ -1,10 +1,8 @@
 from typing import List
-
 import numpy as np
 from gymnasium import spaces
 from hockey import hockey_env
 from stable_baselines3.common.env_util import make_vec_env
-
 from henv.rewards import filter_reward, get_additional_rewards
 
 
