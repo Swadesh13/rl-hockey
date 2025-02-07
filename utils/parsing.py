@@ -157,6 +157,35 @@ def parse_args():
         help="Override the noise type (e.g., 'pink', 'brown', 'white', 'gaussian', 'ornstein', or 'null' for no noise).",
     )
 
+    # RND arguments
+    parser.add_argument(
+        "--rnd_enabled",
+        action="store_true",
+        help="Enable Random Network Distillation (RND)",
+    )
+    parser.add_argument(
+        "--rnd_only_intrinsic",
+        action="store_true",
+        help="Use only intrinsic rewards from RND",
+    )
+    parser.add_argument(
+        "--rnd_intrinsic_reward_weight",
+        type=float,
+        default=None,
+        help="Override the intrinsic reward weight for RND",
+    )
+    parser.add_argument(
+        "--rnd_hidden_size",
+        type=int,
+        default=None,
+        help="Override the hidden layer size for the RND network",
+    )
+    parser.add_argument(
+        "--rnd_non_episodic",
+        action="store_true",
+        help="Use non-episodic intrinsic rewards for RND",
+    )
+
     return parser.parse_args()
 
 
@@ -265,6 +294,18 @@ def override_args(config, args):
             config["model"]["noise"] = None  # No noise applied
         else:
             config["model"]["noise"] = args.noise.lower()
+
+    # RND overrides
+    if args.rnd_enabled:
+        config["rnd"]["enabled"] = args.rnd_enabled
+        if args.rnd_only_intrinsic:
+            config["rnd"]["use_only_intrinsic"] = args.rnd_only_intrinsic
+        if args.rnd_intrinsic_reward_weight is not None:
+            config["rnd"]["intrinsic_reward_weight"] = args.rnd_intrinsic_reward_weight
+        if args.rnd_hidden_size is not None:
+            config["rnd"]["rnd_hidden_size"] = args.rnd_hidden_size
+        if args.rnd_non_episodic:
+            config["rnd"]["non_episodic"] = args.rnd_non_episodic
 
     return config
 

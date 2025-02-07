@@ -1,10 +1,8 @@
 from typing import List
-
 import numpy as np
 from gymnasium import spaces
 from hockey import hockey_env
 from stable_baselines3.common.env_util import make_vec_env
-
 from henv.rewards import filter_reward, get_additional_rewards
 
 
@@ -104,6 +102,90 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
 
         def create_env():
             return HockeyEnv_SB3(
+                weak_opponent=weak_opponent,
+                additional_rewards=additional_rewards,
+                reward_multiplier=reward_multiplier,
+            )
+
+        return make_vec_env(create_env, n_envs=n_envs)
+
+
+from ppo.rnd import RNDModel
+
+
+class HockeyEnv_SB3_RND(HockeyEnv_SB3):
+    def __init__(
+        self,
+        config,
+        weak_opponent: bool = False,
+        additional_rewards: List[str] = None,
+        reward_multiplier: float = 1.0,
+    ):
+        super().__init__(
+            weak_opponent=weak_opponent,
+            additional_rewards=additional_rewards,
+            reward_multiplier=reward_multiplier,
+        )
+        self.config = config
+        self.use_rnd = config.rnd.enabled
+        if self.use_rnd:
+            print(f"Using RND: \n{config.rnd}\n")
+            self.rnd = RNDModel(
+                input_dim=self.observation_space.shape[0],
+                hidden_dim=config.rnd.rnd_hidden_size,
+            )
+            self.intrinsic_reward_weight = config.rnd.intrinsic_reward_weight
+            self.extrinsic_reward_weight = config.rnd.extrinsic_reward_weight
+
+    def step(self, action):
+        obs, reward, done, trunc, info = super().step(action)
+
+        if self.use_rnd:
+            intrinsic_reward = (
+                self.rnd.compute_intrinsic_reward(obs) * self.intrinsic_reward_weight
+            )
+
+            # Decide how to combine rewards
+            if self.config.rnd.use_only_intrinsic:
+                reward = intrinsic_reward
+            else:
+                reward = self.extrinsic_reward_weight * reward + intrinsic_reward
+
+            # Store intrinsic reward in info for debugging/logging
+            info["intrinsic_reward"] = intrinsic_reward
+
+        # Store obs for RND training
+        self.rnd.update(obs)
+
+        return obs, reward, done, trunc, info
+
+    def update_rnd(self, obs):
+        if self.use_rnd:
+            self.rnd.update(obs)
+
+    @staticmethod
+    def make_vec_env_rnd(
+        config,
+        n_envs: int = 1,
+        weak_opponent: bool = False,
+        additional_rewards: List[str] = None,
+        reward_multiplier: float = 1.0,
+    ):
+        """
+        Create and return a vectorized version of the HockeyEnv_SB3_RND environment.
+
+        Args:
+            n_envs (int): Number of environments to vectorize.
+            weak_opponent (bool): Whether to use a weak opponent.
+            additional_rewards (List[str]): List of additional rewards to use.
+
+        Returns:
+            VecEnv: A vectorized environment.
+        """
+
+        def create_env():
+            return HockeyEnv_SB3_RND(
+                config=config,
                 weak_opponent=weak_opponent,
                 additional_rewards=additional_rewards,
                 reward_multiplier=reward_multiplier,

@@ -76,7 +76,7 @@ class League:
                 probs = np.max(probs) - probs
                 if self.max_score:
                     mask = np.where(np.array(self.scores) >= self.max_score, 0, 1)
-                    if sum(mask):
+                    if sum(mask) and not np.all(1 - mask):
                         probs *= mask
                 probs = probs / np.sum(probs)
                 self.curr_idx = np.random.choice(len(self.opponents), p=probs)
