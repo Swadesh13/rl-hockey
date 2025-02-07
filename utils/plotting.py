@@ -133,6 +133,7 @@ custom_styles_rewards = {
     "PPO_9": (rgb.tue_brown, "10-momentum_control"),  #
     "PPO_10": (rgb.tue_gold, "1-momentum_control"),  #
     "PPO_11": (rgb.tue_gray, "1-defensive_play"),  #
+    "vanilla": (rgb.mps_green, "nothing"),  #
 }
 
 custom_styles_rew_mult = {
@@ -147,6 +148,8 @@ custom_styles_rewards3= {
     "PPO_0": (palettes.tue_plot[-1], "momentum_control"),
     "PPO_1": (palettes.tue_plot[0], "defensive_play"),
     "PPO_2": (palettes.tue_plot[-3], "puck_positional"),
+    "PPO_5": (palettes.tue_plot[4], "blocking"),
+    "vanilla": (palettes.tue_plot[5], "nothing"),
 }
 
 if __name__ == "__main__":
@@ -188,7 +191,7 @@ if __name__ == "__main__":
     # )
     
     plot_tensorboard_data(
-        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs",
+        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/models/rewards3",
         smooth_factor=0.95,
         custom_styles=custom_styles_rewards3,
         xlabel="Number of Training Steps",
@@ -198,3 +201,4 @@ if __name__ == "__main__":
         save_path="utils/plots/ppo_rewards3.png",  # Save the plot instead of showing it
         figsize=(12, 4),
     )
+    
