@@ -242,7 +242,7 @@ def override_args(config, args):
     # Reward-related overrides
     if args.reward_multiplier is not None:
         config["environment"]["reward_multiplier"] = args.reward_multiplier
-    if args.additional_rewards is not None:
+    if args.additional_rewards:
         config["environment"]["additional_rewards"] = [
             reward.strip() for reward in args.additional_rewards.split(",")
         ]

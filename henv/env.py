@@ -44,8 +44,7 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
                         
                         "puck_proximity",
                         "intercept_path",
-                        "positional_control",
-                        "defensive_coverage",
+                        "puck_between_player_and_goal",
                         "offensive_pressure",
                     ]
                 )
