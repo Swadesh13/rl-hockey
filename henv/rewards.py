@@ -92,7 +92,7 @@ def puck_infront(obs):
 # ================== PPO's rewards ==================
 
 
-def is_puck_between_player_and_goal(player_x, puck_x, threshold=0.3):
+def is_puck_between_player_and_goal(player_x, puck_x, threshold=0.2):
     """ Checks if the player is between the puck and the goal, considering a threshold. """
     return player_x < puck_x + threshold
 
