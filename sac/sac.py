@@ -21,9 +21,7 @@ class SAC_HockeyAgent(HockeyAgent):
         """
         path = load_path or self.model_path
         if os.path.exists(f"{path}.zip"):
-            self.model = (SAC_PM if self.config.model.prioritized_memory else SAC).load(
-                path, env=self.env, **self.config
-            )
+            self.model = (SAC_PM if self.config.model.prioritized_memory else SAC).load(path, env=self.env, **self.config)
             print(f"Model loaded from {path}")
         else:
             print(f"No model found at {path}. Starting with a new model.")
@@ -41,12 +39,7 @@ if __name__ == "__main__":
 
     from henv.env import HockeyEnv_SB3
 
-    env = HockeyEnv_SB3.make_vec_env(
-        cfg.environment.n_envs,
-        False,
-        cfg.environment.additional_rewards,
-        cfg.environment.reward_multiplier,
-    )
+    env = HockeyEnv_SB3.make_vec_env(cfg.environment.n_envs, False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier)
 
     agent = SAC_HockeyAgent(env, cfg)
 

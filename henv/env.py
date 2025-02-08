@@ -42,10 +42,6 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
                         "defensive_play",
                         "momentum_control",
                         "blocking",
-                        "puck_proximity",
-                        "intercept_path",
-                        "puck_between_player_and_goal",
-                        "offensive_pressure",
                     ]
                 )
             )
@@ -134,8 +130,7 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
                 hidden_dim=config.rnd.rnd_hidden_size,
             )
             self.intrinsic_reward_weight = config.rnd.intrinsic_reward_weight
-            # self.extrinsic_reward_weight = config.rnd.extrinsic_reward_weight
-            self.extrinsic_reward_weight = self.config.environment.reward_multiplier
+            self.extrinsic_reward_weight = config.rnd.extrinsic_reward_weight
 
     def step(self, action):
         obs, reward, done, trunc, info = super().step(action)

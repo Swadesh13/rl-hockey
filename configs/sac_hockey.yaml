@@ -5,7 +5,7 @@ environment:
   n_envs: 1
   seed: 42
   reward_multiplier: 10
-  additional_rewards: False
+  additional_rewards: ["puck_infront", "puck_intercept"]
 
 model:
   name: "sac"  # Could be "td3", "sac", etc.
@@ -19,7 +19,7 @@ model:
     gamma: 0.99  # the discount factor
     train_freq: 1  # Update the model every `train_freq` steps
     gradient_steps: 1  # How many gradient steps to do after each rollout (see `train_freq`)
-  noise: "brown" # None, pink, brown
+  noise: "pink" # None, pink, brownian
   prioritized_memory: False
 
 training:

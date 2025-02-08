@@ -186,9 +186,7 @@ class ColoredNoiseProcess:
 
     def reset(self):
         """Reset the buffer with a new time series."""
-        self.buffer = powerlaw_psd_gaussian(
-            exponent=self.beta, size=self.size, fmin=self.minimum_frequency, rng=self.rng
-        )
+        self.buffer = powerlaw_psd_gaussian(exponent=self.beta, size=self.size, fmin=self.minimum_frequency, rng=self.rng)
         self.idx = 0
 
     def sample(self, T=1):
@@ -250,34 +248,19 @@ class ColoredActionNoise(ActionNoise):
             calling `np.random.default_rng()`.
         """
         super().__init__()
-        assert (action_dim is not None) == np.isscalar(beta), (
-            "`action_dim` has to be specified if and only if `beta` is a scalar."
-        )
+        assert (action_dim is not None) == np.isscalar(beta), "`action_dim` has to be specified if and only if `beta` is a scalar."
 
-        self.sigma = (
-            np.full(action_dim or len(beta), sigma)
-            if np.isscalar(sigma)
-            else np.asarray(sigma)
-        )
+        self.sigma = np.full(action_dim or len(beta), sigma) if np.isscalar(sigma) else np.asarray(sigma)
 
         if np.isscalar(beta):
             self.beta = beta
-            self.gen = ColoredNoiseProcess(
-                beta=self.beta, scale=self.sigma, size=(action_dim, seq_len), rng=rng
-            )
+            self.gen = ColoredNoiseProcess(beta=self.beta, scale=self.sigma, size=(action_dim, seq_len), rng=rng)
         else:
             self.beta = np.asarray(beta)
-            self.gen = [
-                ColoredNoiseProcess(beta=b, scale=s, size=seq_len, rng=rng)
-                for b, s in zip(self.beta, self.sigma)
-            ]
+            self.gen = [ColoredNoiseProcess(beta=b, scale=s, size=seq_len, rng=rng) for b, s in zip(self.beta, self.sigma)]
 
     def __call__(self) -> np.ndarray:
-        return (
-            self.gen.sample()
-            if np.isscalar(self.beta)
-            else np.asarray([g.sample() for g in self.gen])
-        )
+        return self.gen.sample() if np.isscalar(self.beta) else np.asarray([g.sample() for g in self.gen])
 
     def __repr__(self) -> str:
         return f"ColoredActionNoise(beta={self.beta}, sigma={self.sigma})"
@@ -311,32 +294,23 @@ class ColoredNoiseDist(SquashedDiagGaussianDistribution):
         epsilon : float, optional, by default 1e-6
             A small value to avoid NaN due to numerical imprecision.
         """
-        assert (action_dim is not None) == np.isscalar(beta), (
-            "`action_dim` has to be specified if and only if `beta` is a scalar."
-        )
+        assert (action_dim is not None) == np.isscalar(beta), "`action_dim` has to be specified if and only if `beta` is a scalar."
 
         if np.isscalar(beta):
             super().__init__(action_dim, epsilon)
             self.beta = beta
-            self.gen = ColoredNoiseProcess(
-                beta=self.beta, size=(action_dim, seq_len), rng=rng
-            )
+            self.gen = ColoredNoiseProcess(beta=self.beta, size=(action_dim, seq_len), rng=rng)
         else:
             super().__init__(len(beta), epsilon)
             self.beta = np.asarray(beta)
-            self.gen = [
-                ColoredNoiseProcess(beta=b, size=seq_len, rng=rng) for b in self.beta
-            ]
+            self.gen = [ColoredNoiseProcess(beta=b, size=seq_len, rng=rng) for b in self.beta]
 
     def sample(self) -> th.Tensor:
         if np.isscalar(self.beta):
             cn_sample = th.tensor(self.gen.sample()).float()
         else:
             cn_sample = th.tensor([cnp.sample() for cnp in self.gen]).float()
-        self.gaussian_actions = (
-            self.distribution.mean
-            + self.distribution.stddev * cn_sample.to(self.distribution.stddev.device)
-        )
+        self.gaussian_actions = self.distribution.mean + self.distribution.stddev * cn_sample.to(self.distribution.stddev.device)
         return th.tanh(self.gaussian_actions)
 
     def __repr__(self) -> str:
@@ -366,28 +340,3 @@ class PinkNoiseDist(ColoredNoiseDist):
             A small value to avoid NaN due to numerical imprecision.
         """
         super().__init__(1, seq_len, action_dim, rng, epsilon)
-
-
-class BrownNoiseDist(ColoredNoiseDist):
-    def __init__(self, seq_len, action_dim, rng=None, epsilon=1e-6):
-        """
-        Gaussian brown noise distribution for using brown action noise with stochastic policies.
-
-        The brown noise is only used for sampling actions. In all other respects, this class acts like its parent
-        class (`SquashedDiagGaussianDistribution`).
-
-        Parameters
-        ----------
-        seq_len : int
-            Length of sampled colored noise signals. If sampled for longer than `seq_len` steps, a new
-            colored noise signal of the same length is sampled. Should usually be set to the episode length
-            (horizon) of the RL task.
-        action_dim : int
-            Dimensionality of the action space.
-        rng : np.random.Generator, optional
-            Random number generator (for reproducibility). If not passed, a new random number generator is created by
-            calling `np.random.default_rng()`.
-        epsilon : float, optional, by default 1e-6
-            A small value to avoid NaN due to numerical imprecision.
-        """
-        super().__init__(2, seq_len, action_dim, rng, epsilon)
