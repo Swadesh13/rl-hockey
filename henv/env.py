@@ -1,8 +1,10 @@
 from typing import List
+
 import numpy as np
 from gymnasium import spaces
 from hockey import hockey_env
 from stable_baselines3.common.env_util import make_vec_env
+
 from henv.rewards import filter_reward, get_additional_rewards
 
 
@@ -36,12 +38,10 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
                         "pred_dist_from_puck",
                         "puck_infront",
                         "puck_intercept",
-                        
                         "puck_positional",
                         "defensive_play",
                         "momentum_control",
                         "blocking",
-                        
                         "puck_proximity",
                         "intercept_path",
                         "puck_between_player_and_goal",
@@ -134,7 +134,8 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
                 hidden_dim=config.rnd.rnd_hidden_size,
             )
             self.intrinsic_reward_weight = config.rnd.intrinsic_reward_weight
-            self.extrinsic_reward_weight = config.rnd.extrinsic_reward_weight
+            # self.extrinsic_reward_weight = config.rnd.extrinsic_reward_weight
+            self.extrinsic_reward_weight = self.config.environment.reward_multiplier
 
     def step(self, action):
         obs, reward, done, trunc, info = super().step(action)
