@@ -62,9 +62,10 @@ def plot_tensorboard_data(
     xlabel="Training Steps",
     ylabel="Mean Reward",
     title="Training Progress",
+    xlim=None,  # Limit X-axis
     ylim=None,  # Limit Y-axis
     save_path=None,  # Path to save the plot
-    figsize=(10, 6),  # New: Set figure size
+    figsize=(10, 6),  # Set figure size
 ):
     """
     Extracts and plots smoothed TensorBoard data.
@@ -97,9 +98,12 @@ def plot_tensorboard_data(
 
     if ylim:
         plt.ylim(ylim)  # Apply Y-axis limits if provided
+    
+    if xlim:
+        plt.xlim(xlim)  # Apply X-axis limits if provided
 
-    # plt.legend(ncol=2, loc="lower right")
-    plt.legend()
+    plt.legend(ncol=2, loc="lower right")
+    # plt.legend()
     plt.grid()
 
     # Save the plot if a path is provided
@@ -149,6 +153,34 @@ custom_styles_rewards3= {
     "PPO_2": (palettes.tue_plot[-3], "puck_positional"),
 }
 
+custom_styles_rewards5= {
+    "PPO_0": (palettes.tue_plot[0], "puck_positional"),
+    "PPO_1": (palettes.tue_plot[1], "defensive_play"),
+    "PPO_2": (palettes.tue_plot[2], "momentum_control"),
+    "PPO_3": (palettes.tue_plot[8], "offensive_pressure"),
+    "PPO_4": (palettes.tue_plot[4], "puck_between_player_and_goal"),
+    "PPO_5": (palettes.tue_plot[5], "blocking"),
+    "PPO_6": (palettes.tue_plot[6], "intercept_path"),
+    "PPO_7": (palettes.tue_plot[7], "puck_proximity"),
+    "PPO_vanilla": (palettes.tue_plot[3], "vanilla"),
+}
+
+custom_styles_rnd = {
+    "PPO_0": (palettes.tue_secondary[0], "e0_i0.1"),
+    "PPO_1": (palettes.tue_secondary[1], "e1_i0.1"),
+    "PPO_2": (palettes.tue_secondary[2], "e1_i0.1"),  
+    "PPO_3": (palettes.tue_secondary[3], "e0_i0.1"),
+    "PPO_4": (palettes.tue_secondary[4], "e0_i0.1"),
+    "PPO_5": (palettes.tue_secondary[5], "e0_i0.1"),
+    "PPO_6": (palettes.tue_secondary[6], "e1_i0.1"),
+    "PPO_7": (palettes.tue_secondary[7], "e1_i0.1"),
+    "PPO_8": (palettes.tue_secondary[8], "e10_i0.1"),
+    "PPO_9": (palettes.tue_secondary[9], "e10_i0.1"),
+    "PPO_10": (palettes.tue_secondary[10], "e10_i0.1"),
+    "PPO_11": (palettes.tue_secondary[11], "e10_i0.1"),
+    "PPO_vanilla": (palettes.tue_primary[0], "vanilla"),
+}
+
 if __name__ == "__main__":
 
     # plot_tensorboard_data(
@@ -187,14 +219,41 @@ if __name__ == "__main__":
     #     figsize=(12, 4),
     # )
     
+    # plot_tensorboard_data(
+    #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs",
+    #     smooth_factor=0.95,
+    #     custom_styles=custom_styles_rewards3,
+    #     xlabel="Number of Training Steps",
+    #     ylabel="Smoothed Mean Reward",
+    #     title="Effect of Different Rewards3 on PPO Performance",
+    #     # ylim=(-20, 10),  
+    #     save_path="utils/plots/ppo_rewards3.png",  # Save the plot instead of showing it
+    #     figsize=(12, 4),
+    # )
+    
+    # plot_tensorboard_data(
+    #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/rewards5",
+    #     smooth_factor=0.95,
+    #     custom_styles=custom_styles_rewards5,
+    #     xlabel="Number of Training Steps",
+    #     ylabel="Smoothed Mean Reward",
+    #     title="Effect of Different Rewards on PPO Performance",
+    #     # ylim=(-20, 10),  
+    #     # xlim=(0, 2e7),
+    #     save_path="utils/plots/ppo_rewards5.png",  # Save the plot instead of showing it
+    #     figsize=(12, 4),
+    # )
+    
     plot_tensorboard_data(
-        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs",
+        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/rnd",
         smooth_factor=0.95,
-        custom_styles=custom_styles_rewards3,
+        custom_styles=custom_styles_rnd,
         xlabel="Number of Training Steps",
         ylabel="Smoothed Mean Reward",
-        title="Effect of Different Rewards3 on PPO Performance",
+        title="Effect of RND on PPO Performance",
         # ylim=(-20, 10),  
-        save_path="utils/plots/ppo_rewards3.png",  # Save the plot instead of showing it
+        # xlim=(0, 2e7),
+        save_path="utils/plots/ppo_rnd.png",  # Save the plot instead of showing it
         figsize=(12, 4),
     )
+    
