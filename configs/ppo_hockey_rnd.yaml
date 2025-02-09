@@ -49,6 +49,6 @@ training:
 logging:
   log_dir: ./logs/
   verbose: 1
-  tensorboard: ./ppo/logs/
+  tensorboard: ./ppo/logs/rnd/
 
 # python -m ppo.ppo --config configs/ppo_hockey_last.yaml --train -q --n_envs 64 --policy_kwargs '{"net_arch": [256, 256], "ortho_init": true, "activation_fn": "relu"}'

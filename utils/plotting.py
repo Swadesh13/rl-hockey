@@ -133,6 +133,7 @@ custom_styles_rewards = {
     "PPO_9": (rgb.tue_brown, "10-momentum_control"),  #
     "PPO_10": (rgb.tue_gold, "1-momentum_control"),  #
     "PPO_11": (rgb.tue_gray, "1-defensive_play"),  #
+    "vanilla": (rgb.mps_green, "nothing"),  #
 }
 
 custom_styles_rew_mult = {
@@ -147,6 +148,20 @@ custom_styles_rewards3= {
     "PPO_0": (palettes.tue_plot[-1], "momentum_control"),
     "PPO_1": (palettes.tue_plot[0], "defensive_play"),
     "PPO_2": (palettes.tue_plot[-3], "puck_positional"),
+    "PPO_5": (palettes.tue_plot[4], "blocking"),
+    "vanilla": (palettes.tue_plot[5], "nothing"),
+}
+
+custom_styles_rewards4= {
+    "PPO_2": (palettes.tue_plot[0], "momentum_control"),
+    "PPO_0": (palettes.tue_plot[1], "puck_proximity"),
+    "PPO_1": (palettes.tue_plot[2], "intercept_path"),
+    "PPO_3": (palettes.tue_plot[3], "offensive_pressure"),
+    "PPO_4": (palettes.tue_plot[4], "positional_control"),
+    "PPO_5": (palettes.tue_plot[5], "defensive_coverage"),
+    "PPO_vanilla": (palettes.tue_plot[6], "vanilla"),
+    "PPO_blocking": (palettes.tue_plot[7], "blocking"),
+    "PPO_momentum_control": (palettes.tue_plot[8], "momentum_control"),
 }
 
 if __name__ == "__main__":
@@ -187,14 +202,39 @@ if __name__ == "__main__":
     #     figsize=(12, 4),
     # )
     
+    # plot_tensorboard_data(
+    #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/models/rewards3",
+    #     smooth_factor=0.95,
+    #     custom_styles=custom_styles_rewards3,
+    #     xlabel="Number of Training Steps",
+    #     ylabel="Smoothed Mean Reward",
+    #     title="Effect of Different Rewards3 on PPO Performance",
+    #     # ylim=(-20, 10),  
+    #     save_path="utils/plots/ppo_rewards3.png",  # Save the plot instead of showing it
+    #     figsize=(12, 4),
+    # )
+    
+    # plot_tensorboard_data(
+    #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/models/rewards4",
+    #     smooth_factor=0.95,
+    #     custom_styles=custom_styles_rewards4,
+    #     xlabel="Number of Training Steps",
+    #     ylabel="Smoothed Mean Reward",
+    #     title="Rewards4 PPO",
+    #     # ylim=(-20, 10),  
+    #     save_path="utils/plots/ppo_rewards4.png",  # Save the plot instead of showing it
+    #     figsize=(12, 4),
+    # )
+    
     plot_tensorboard_data(
         log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs",
         smooth_factor=0.95,
-        custom_styles=custom_styles_rewards3,
+        custom_styles={},
         xlabel="Number of Training Steps",
         ylabel="Smoothed Mean Reward",
-        title="Effect of Different Rewards3 on PPO Performance",
+        title="Current experiments",
         # ylim=(-20, 10),  
-        save_path="utils/plots/ppo_rewards3.png",  # Save the plot instead of showing it
+        save_path="utils/plots/ppo_current_logs.png",  # Save the plot instead of showing it
         figsize=(12, 4),
     )
+    
