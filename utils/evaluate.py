@@ -42,10 +42,9 @@ def eval_agent(
         if mode_idx >= len(modes):
             mode_idx = len(modes) - 1
         mode = modes[mode_idx]
-        env.reset(mode=mode)  # Reset environment with the new mode
+        obs, info = env.reset(mode=mode)  # Reset environment with the new mode
         print(f"Starting Episode {episode + 1} in Mode: {mode}")
 
-        obs, info = env.reset()
         obs_agent2 = env.obs_agent_two()
         episode_reward = 0
 
