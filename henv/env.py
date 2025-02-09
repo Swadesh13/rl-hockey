@@ -146,10 +146,10 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
             )
 
             # Decide how to combine rewards
-            if self.config.rnd.use_only_intrinsic:
-                reward = intrinsic_reward
-            else:
-                reward = self.extrinsic_reward_weight * reward + intrinsic_reward
+            # if self.config.rnd.use_only_intrinsic:
+            #     reward = intrinsic_reward
+            # else:
+            reward = self.extrinsic_reward_weight * reward + intrinsic_reward
 
             # Store intrinsic reward in info for debugging/logging
             info["intrinsic_reward"] = intrinsic_reward

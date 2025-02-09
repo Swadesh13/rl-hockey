@@ -102,7 +102,7 @@ def plot_tensorboard_data(
     if xlim:
         plt.xlim(xlim)  # Apply X-axis limits if provided
 
-    plt.legend(ncol=2, loc="lower right")
+    plt.legend(ncol=3, loc="lower right")
     # plt.legend()
     plt.grid()
 
@@ -112,6 +112,109 @@ def plot_tensorboard_data(
         print(f"Plot saved to {save_path}")
     else:
         plt.show()
+
+def sort_key(label):
+    if label == "vanilla":
+        return (1000, 1000)  # Ensure "vanilla" is sorted last
+    parts = label.split("_")
+    e_val = int(parts[0][1:])  # Extract numeric part after 'e'
+    i_val = float(parts[1][1:])  # Extract numeric part after 'i'
+    return (e_val, i_val)  # Sort first by eX, then by iY
+
+
+def plot_tensorboard_data_RND(
+    log_dir,
+    metric="eval/mean_reward",
+    smooth_factor=0.9,
+    custom_styles=None,
+    xlabel="Training Steps",
+    ylabel="Mean Reward",
+    title="Training Progress",
+    xlim=None,  
+    ylim=None,  
+    save_path=None,  
+    figsize=(10, 6),
+):
+    """
+    Extracts and plots smoothed TensorBoard data.
+
+    Args:
+        log_dir (str): Parent directory containing experiment subdirectories.
+        metric (str): The metric to extract and plot.
+        smooth_factor (float): The smoothing factor for moving average (0 = no smoothing, 1 = full smooth).
+        custom_styles (dict): Custom colors and labels.
+        xlabel (str): Label for the x-axis.
+        ylabel (str): Label for the y-axis.
+        title (str): Title of the plot.
+        ylim (tuple): (y_min, y_max) to restrict the Y-axis range.
+        save_path (str): If provided, saves the plot to this path instead of displaying it.
+        figsize (tuple): Size of the figure in inches (width, height).
+    """
+    data = extract_tensorboard_data(log_dir, metric, smooth_factor)
+
+    plt.figure(figsize=figsize)  
+
+    for experiment, (steps, values) in data.items():
+        color, label = custom_styles.get(
+            experiment, (None, experiment)
+        )  
+        plt.plot(steps, values, label=label, color=color)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    if ylim:
+        plt.ylim(ylim)  
+    
+    if xlim:
+        plt.xlim(xlim)  
+
+    # Extract current legend handles and labels
+    handles, labels = plt.gca().get_legend_handles_labels()
+
+    # Separate "vanilla" from other labels
+    vanilla_handle = None
+    vanilla_label = None
+    filtered_handles = []
+    filtered_labels = []
+
+    for handle, label in zip(handles, labels):
+        if label == "vanilla":
+            vanilla_handle = handle
+            vanilla_label = label
+        else:
+            filtered_handles.append(handle)
+            filtered_labels.append(label)
+
+    # Sort numerically: first by eX, then by iY
+    def sort_key(label):
+        if label == "vanilla":
+            return (1000, 1000)  # Ensure "vanilla" is sorted last
+        parts = label.split("_")
+        e_val = int(parts[0][1:])  # Extract numeric part after 'e'
+        i_val = float(parts[1][1:])  # Extract numeric part after 'i'
+        return (e_val, i_val)  # Sort first by eX, then by iY
+
+    sorted_pairs = sorted(zip(filtered_handles, filtered_labels), key=lambda x: sort_key(x[1]))
+    sorted_handles, sorted_labels = zip(*sorted_pairs)
+
+    # Place all entries except 'vanilla' in a multi-column legend
+    main_legend = plt.legend(sorted_handles, sorted_labels, ncol=3, loc="lower right")
+
+    # Add 'vanilla' separately in its own row
+    if vanilla_handle:
+        vanilla_legend = plt.legend([vanilla_handle], [vanilla_label], loc="center right", bbox_to_anchor=(0.975, 0.36))
+
+    plt.gca().add_artist(main_legend)  # Keep both legends active
+    plt.grid()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        print(f"Plot saved to {save_path}")
+    else:
+        plt.show()
+
 
 
 # Example usage with custom colors, labels, axis titles, Y-axis limits, and saving
@@ -169,31 +272,35 @@ custom_styles_rewards4= {
 }
 
 custom_styles_rewards5= {
-    "PPO_0": (palettes.tue_plot[0], "puck_positional"),
+    "PPO_0": (rgb.tue_darkgreen, "puck_positional"),
     "PPO_1": (palettes.tue_plot[1], "defensive_play"),
-    "PPO_2": (palettes.tue_plot[2], "momentum_control"),
+    "PPO_2": (palettes.tue_plot[3], "momentum_control"),
     "PPO_3": (palettes.tue_plot[8], "offensive_pressure"),
     "PPO_4": (palettes.tue_plot[4], "puck_between_player_and_goal"),
     "PPO_5": (palettes.tue_plot[5], "blocking"),
     "PPO_6": (palettes.tue_plot[6], "intercept_path"),
     "PPO_7": (palettes.tue_plot[7], "puck_proximity"),
-    "PPO_vanilla": (palettes.tue_plot[3], "vanilla"),
+    "PPO_vanilla": (palettes.tue_plot[0], "vanilla"),
 }
 
 custom_styles_rnd = {
+    "PPO_1": (palettes.tue_secondary[1], "e0_i0.01"),
     "PPO_0": (palettes.tue_secondary[0], "e0_i0.1"),
-    "PPO_1": (palettes.tue_secondary[1], "e1_i0.1"),
-    "PPO_2": (palettes.tue_secondary[2], "e1_i0.1"),  
-    "PPO_3": (palettes.tue_secondary[3], "e0_i0.1"),
-    "PPO_4": (palettes.tue_secondary[4], "e0_i0.1"),
-    "PPO_5": (palettes.tue_secondary[5], "e0_i0.1"),
-    "PPO_6": (palettes.tue_secondary[6], "e1_i0.1"),
-    "PPO_7": (palettes.tue_secondary[7], "e1_i0.1"),
-    "PPO_8": (palettes.tue_secondary[8], "e10_i0.1"),
-    "PPO_9": (palettes.tue_secondary[9], "e10_i0.1"),
-    "PPO_10": (palettes.tue_secondary[10], "e10_i0.1"),
-    "PPO_11": (palettes.tue_secondary[11], "e10_i0.1"),
+    "PPO_2": (palettes.tue_secondary[2], "e0_i1"),  
+    "PPO_3": (palettes.tue_secondary[3], "e0_i10"),
     "PPO_vanilla": (palettes.tue_primary[0], "vanilla"),
+    
+    "PPO_4": (palettes.tue_secondary[4], "e1_i0.01"),
+    "PPO_6": (palettes.tue_secondary[5], "e1_i0.1"),
+    "PPO_5": (palettes.tue_secondary[6], "e1_i1"),
+    "PPO_9": (palettes.tue_secondary[7], "e1_i10"),
+    
+    "PPO_8": (palettes.tue_secondary[8], "e10_i0.01"),
+    "PPO_11": (palettes.tue_secondary[11], "e10_i0.1"),
+    "PPO_10": (palettes.tue_secondary[10], "e10_i1"),
+    "PPO_7": (palettes.tue_secondary[9], "e10_i10"),
+    
+    
 }
 
 if __name__ == "__main__":
@@ -235,11 +342,7 @@ if __name__ == "__main__":
     # )
     
     # plot_tensorboard_data(
-<<<<<<< HEAD
-    #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs",
-=======
     #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/models/rewards3",
->>>>>>> acf9704217c2fa0b16230cb2b56902ea0e4d6bd2
     #     smooth_factor=0.95,
     #     custom_styles=custom_styles_rewards3,
     #     xlabel="Number of Training Steps",
@@ -251,33 +354,21 @@ if __name__ == "__main__":
     # )
     
     # plot_tensorboard_data(
-<<<<<<< HEAD
     #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/rewards5",
     #     smooth_factor=0.95,
     #     custom_styles=custom_styles_rewards5,
     #     xlabel="Number of Training Steps",
     #     ylabel="Smoothed Mean Reward",
     #     title="Effect of Different Rewards on PPO Performance",
-    #     # ylim=(-20, 10),  
+    #     ylim=(-10, 12),  
     #     # xlim=(0, 2e7),
     #     save_path="utils/plots/ppo_rewards5.png",  # Save the plot instead of showing it
-=======
-    #     log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/models/rewards4",
-    #     smooth_factor=0.95,
-    #     custom_styles=custom_styles_rewards4,
-    #     xlabel="Number of Training Steps",
-    #     ylabel="Smoothed Mean Reward",
-    #     title="Rewards4 PPO",
-    #     # ylim=(-20, 10),  
-    #     save_path="utils/plots/ppo_rewards4.png",  # Save the plot instead of showing it
->>>>>>> acf9704217c2fa0b16230cb2b56902ea0e4d6bd2
     #     figsize=(12, 4),
     # )
     
-    plot_tensorboard_data(
+    plot_tensorboard_data_RND(
         log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/rnd",
         smooth_factor=0.95,
-<<<<<<< HEAD
         custom_styles=custom_styles_rnd,
         xlabel="Number of Training Steps",
         ylabel="Smoothed Mean Reward",
@@ -285,14 +376,44 @@ if __name__ == "__main__":
         # ylim=(-20, 10),  
         # xlim=(0, 2e7),
         save_path="utils/plots/ppo_rnd.png",  # Save the plot instead of showing it
-=======
-        custom_styles={},
-        xlabel="Number of Training Steps",
-        ylabel="Smoothed Mean Reward",
-        title="Current experiments",
-        # ylim=(-20, 10),  
-        save_path="utils/plots/ppo_current_logs.png",  # Save the plot instead of showing it
->>>>>>> acf9704217c2fa0b16230cb2b56902ea0e4d6bd2
         figsize=(12, 4),
     )
     
+    plot_tensorboard_data(
+        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/rnd_parallel",
+        smooth_factor=0.95,
+        custom_styles={},
+        xlabel="Number of Training Steps",
+        ylabel="Smoothed Mean Reward",
+        title="Effect of n_envs on PPO+RND Performance",
+        # ylim=(-15, 12),  
+        # xlim=(0, 2e7),
+        save_path="utils/plots/ppo_rnd_nenvs.png",  # Save the plot instead of showing it
+        figsize=(12, 4),
+    )
+    
+    plot_tensorboard_data(
+        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/noises2",
+        smooth_factor=0.95,
+        custom_styles={},
+        xlabel="Number of Training Steps",
+        ylabel="Smoothed Mean Reward",
+        title="Effect of Gaussian noise on PPO Performance",
+        # ylim=(-15, 12),  
+        # xlim=(0, 2e7),
+        save_path="utils/plots/ppo_gauss.png",  # Save the plot instead of showing it
+        figsize=(12, 4),
+    )
+
+    plot_tensorboard_data(
+        log_dir="/storage/brno2/home/nademvit/rl_hw/rl-hockey/ppo/logs/threerews",
+        smooth_factor=0.95,
+        custom_styles={},
+        xlabel="Number of Training Steps",
+        ylabel="Smoothed Mean Reward",
+        title="Effect of 3 rewards on PPO Performance",
+        # ylim=(-15, 12),  
+        # xlim=(0, 2e7),
+        save_path="utils/plots/ppo_3rews.png",  # Save the plot instead of showing it
+        figsize=(12, 4),
+    )

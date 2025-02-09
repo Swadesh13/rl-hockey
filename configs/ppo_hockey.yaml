@@ -18,7 +18,7 @@ rnd:
 model:
   name: ppo
   models_dir: ppo/models/
-  noise: null  # Options: pink, brown, white, gaussian, ornstein
+  noise: gaussian  # Options: pink, brown, white, gaussian, ornstein
   hyperparameters:
     learning_rate: 0.00073
     n_steps: 512
@@ -49,4 +49,4 @@ training:
 logging:
   log_dir: ./logs/
   verbose: 1
-  tensorboard: ./ppo/logs/
+  tensorboard: ./ppo/logs/noises2/

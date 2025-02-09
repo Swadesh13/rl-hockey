@@ -160,7 +160,7 @@ def blocking(obs, h_env): #gut
     return 0
 
 
-def reward_puck_proximity(obs):
+def reward_puck_proximity(obs): # great
     """ Encourages staying close to the puck. """
     player_x, player_y = obs[0], obs[1]
     puck_x, puck_y = obs[12], obs[13]
@@ -171,7 +171,7 @@ def reward_puck_proximity(obs):
     return max(-distance_to_puck * 0.02, -0.5)
 
 
-def reward_intercept_path(obs):
+def reward_intercept_path(obs): # great
     """ Rewards the agent for positioning itself close to the predicted puck trajectory. """
     
     # Unpacking relevant observation values
@@ -213,7 +213,7 @@ def reward_puck_between_player_and_goal(obs):
     return -0.5  # penalty if not in a good position
 
 
-def reward_offensive_pressure(obs, h_env):
+def reward_offensive_pressure(obs, h_env): # great
     """ Encourages the agent to stay near the opponent’s goal to apply pressure. """
     player_x = obs[0]
     goal_x = h_env.W  # Opponent's goal
@@ -221,7 +221,7 @@ def reward_offensive_pressure(obs, h_env):
     return max(0.3 - abs(player_x - goal_x) * 0.1, 0)  # Reward for being near the opponent’s goal
 
 
-# ====================== End of Vojtech's rewards ======================
+# ====================== End of PPO's rewards ======================
 
 
 def get_additional_rewards(obs, h_env=Henv):

@@ -158,16 +158,16 @@ def parse_args():
     )
 
     # RND arguments
-    parser.add_argument(
-        "--rnd_enabled",
-        action="store_true",
-        help="Enable Random Network Distillation (RND)",
-    )
-    parser.add_argument(
-        "--rnd_only_intrinsic",
-        action="store_true",
-        help="Use only intrinsic rewards from RND",
-    )
+    # parser.add_argument(
+    #     "--rnd_enabled",
+    #     action="store_true",
+    #     help="Enable Random Network Distillation (RND)",
+    # )
+    # parser.add_argument(
+    #     "--rnd_only_intrinsic",
+    #     action="store_true",
+    #     help="Use only intrinsic rewards from RND",
+    # )
     parser.add_argument(
         "--rnd_intrinsic_reward_weight",
         type=float,
@@ -296,15 +296,20 @@ def override_args(config, args):
             config["model"]["noise"] = args.noise.lower()
 
     # RND overrides
-    if args.rnd_enabled:
-        config["rnd"]["enabled"] = args.rnd_enabled
-        if args.rnd_only_intrinsic:
-            config["rnd"]["use_only_intrinsic"] = args.rnd_only_intrinsic
+    if config["rnd"]["enabled"]:
+        print("Overriding RND")
+        # if args.rnd_only_intrinsic:
+        #     print("Overriding RND only intrinsic")
+        #     config["rnd"]["use_only_intrinsic"] = args.rnd_only_intrinsic
         if args.rnd_intrinsic_reward_weight is not None:
+            print("Overriding RND intrinsic reward weight", config["rnd"]["intrinsic_reward_weight"])
             config["rnd"]["intrinsic_reward_weight"] = args.rnd_intrinsic_reward_weight
+            print("to ", config["rnd"]["intrinsic_reward_weight"])
         if args.rnd_hidden_size is not None:
+            print("Overriding RND hidden size")
             config["rnd"]["rnd_hidden_size"] = args.rnd_hidden_size
         if args.rnd_non_episodic:
+            print("Overriding RND non-episodic")
             config["rnd"]["non_episodic"] = args.rnd_non_episodic
 
     return config
