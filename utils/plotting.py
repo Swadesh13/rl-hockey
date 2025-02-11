@@ -83,6 +83,15 @@ def plot_tensorboard_data(
         figsize (tuple): Size of the figure in inches (width, height).
     """
     data = extract_tensorboard_data(log_dir, metric, smooth_factor)
+    
+    # Print best eval/mean_reward for each experiment
+    print("\nBest eval/mean_reward for each experiment:")
+    for experiment, (steps, values) in data.items():
+        best_idx = np.argmax(values)
+        best_value = values[best_idx]
+        best_step = steps[best_idx]
+        best_name = custom_styles.get(experiment, experiment)[1]
+        print(f"  {experiment}[{best_name}]: Best {metric} = {best_value:.2f} at step {best_step:,}")
 
     plt.figure(figsize=figsize)  # Use custom figure size
 
@@ -151,6 +160,15 @@ def plot_tensorboard_data_RND(
         figsize (tuple): Size of the figure in inches (width, height).
     """
     data = extract_tensorboard_data(log_dir, metric, smooth_factor)
+    
+    # Print best eval/mean_reward for each experiment
+    print("\nBest eval/mean_reward for each experiment:")
+    for experiment, (steps, values) in data.items():
+        best_idx = np.argmax(values)
+        best_value = values[best_idx]
+        best_step = steps[best_idx]
+        best_name = custom_styles.get(experiment, experiment)[1]
+        print(f"  {experiment}[{best_name}]: Best {metric} = {best_value:.2f} at step {best_step:,}")
 
     plt.figure(figsize=figsize)  
 
@@ -290,9 +308,12 @@ custom_styles_rnd = {
     "PPO_3": (palettes.tue_secondary[3], "e0_i10"),
     "PPO_vanilla": (palettes.tue_primary[0], "vanilla"),
     
-    "PPO_4": (palettes.tue_secondary[4], "e1_i0.01"),
-    "PPO_6": (palettes.tue_secondary[5], "e1_i0.1"),
-    "PPO_5": (palettes.tue_secondary[6], "e1_i1"),
+    # "PPO_4": (palettes.tue_secondary[4], "e1_i0.01"),
+    "PPO_15": (palettes.tue_secondary[4], "e1_i0.01"),
+    # "PPO_6": (palettes.tue_secondary[5], "e1_i0.1"),
+    "PPO_13": (palettes.tue_secondary[5], "e1_i0.1"),
+    # "PPO_5": (palettes.tue_secondary[6], "e1_i1"),
+    "PPO_14": (palettes.tue_secondary[6], "e1_i1"),
     "PPO_9": (palettes.tue_secondary[7], "e1_i10"),
     
     "PPO_8": (palettes.tue_secondary[8], "e10_i0.01"),

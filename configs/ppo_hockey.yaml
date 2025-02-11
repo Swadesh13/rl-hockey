@@ -49,4 +49,4 @@ training:
 logging:
   log_dir: ./logs/
   verbose: 1
-  tensorboard: ./ppo/logs/noises2/
+  tensorboard: ./ppo/logs/threerews/

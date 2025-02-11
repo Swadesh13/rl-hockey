@@ -1,3 +1,17 @@
-ppo_vanilla.zip is from  ppo/logs/PPO_vanilla and its just PPO
+ppo_vanilla.zip 
+- ppo/logs/PPO_vanilla 
+- its just PPO
 
-ppo_gaussian_noise.zip is from ppo/logs/noises2/PPO_0 and its vanilla + gaussian noise
+ppo_gaussian_noise.zip 
+- ppo/logs/noises2/PPO_0 
+- its vanilla + gaussian noise
+
+ppo_puck_proximity.zip
+- ppo/logs/rewards5/PPO_7
+- base ppo with puck proximity reward
+- 10.52 eval mean reward
+
+ppo_offensive_pressure.zip
+- ppo/logs/rewards5/PPO_3
+- base ppo with offensive pressure reward
+- 10.50 eval mean reward
