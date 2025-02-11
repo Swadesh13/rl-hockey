@@ -1,0 +1,3 @@
+ppo_vanilla.zip is from  ppo/logs/PPO_vanilla and its just PPO
+
+ppo_gaussian_noise.zip is from ppo/logs/noises2/PPO_0 and its vanilla + gaussian noise
