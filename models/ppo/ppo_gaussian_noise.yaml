@@ -39,7 +39,7 @@ model:
 training:
   total_timesteps: 40000000
   log_interval: 1
-  model_path: models/ppo/ppo_vanilla_rew10stable
+  model_path: models/ppo/ppo_gaussian_noise
   save_model_every: 50000
 logging:
   log_dir: ./logs/

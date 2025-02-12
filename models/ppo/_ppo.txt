@@ -1,18 +1,23 @@
 ppo_vanilla.zip 
 - ppo/logs/PPO_vanilla 
 - its just PPO
+8.19 ± 4.87
 
 ppo_gaussian_noise.zip 
 - ppo/logs/noises2/PPO_0
 - its vanilla + gaussian noise
 - eval mean reward 10.47 at step 34,240,000
+8.58 ± 3.43
 
 ppo_puck_proximity.zip
 - ppo/logs/rewards5/PPO_7
 - base ppo with puck proximity reward
 - eval mean reward 10.52 at step 31,904,000
+9.24 ± 2.15
 
 ppo_offensive_pressure.zip
 - ppo/logs/rewards5/PPO_3
 - base ppo with offensive pressure reward
 - eval mean reward 10.50 at step 23,936,000
+9.01 ± 2.24
+
