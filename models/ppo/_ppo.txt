@@ -13,11 +13,14 @@ ppo_puck_proximity.zip
 - ppo/logs/rewards5/PPO_7
 - base ppo with puck proximity reward
 - eval mean reward 10.52 at step 31,904,000
-9.24 ± 2.15
+Overall Avg Reward:  9.34 ± 1.66
+Win Statistics: {'Agent Wins': 994, 'Opponent Wins': 5, 'Draws': 1} win_rate=0.99%
 
 ppo_offensive_pressure.zip
 - ppo/logs/rewards5/PPO_3
 - base ppo with offensive pressure reward
 - eval mean reward 10.50 at step 23,936,000
-9.01 ± 2.24
+Overall Avg Reward:  8.96 ± 2.69
+Win Statistics: {'Agent Wins': 976, 'Opponent Wins': 10, 'Draws': 14} win_rate=0.98%
+
 
