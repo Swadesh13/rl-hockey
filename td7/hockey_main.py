@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     if args.train:
         agent.train()
+        agent.evaluate()
         agent.save()
 
     if args.eval:
