@@ -302,7 +302,10 @@ def override_args(config, args):
         #     print("Overriding RND only intrinsic")
         #     config["rnd"]["use_only_intrinsic"] = args.rnd_only_intrinsic
         if args.rnd_intrinsic_reward_weight is not None:
-            print("Overriding RND intrinsic reward weight", config["rnd"]["intrinsic_reward_weight"])
+            print(
+                "Overriding RND intrinsic reward weight",
+                config["rnd"]["intrinsic_reward_weight"],
+            )
             config["rnd"]["intrinsic_reward_weight"] = args.rnd_intrinsic_reward_weight
             print("to ", config["rnd"]["intrinsic_reward_weight"])
         if args.rnd_hidden_size is not None:
@@ -390,3 +393,9 @@ def get_activation_fn_from_str(activation_fn_str):
         raise ValueError(f"Unknown activation function: {activation_fn_str}")
 
     return activation_fn_dict[activation_fn_str]
+
+
+def get_eval_env():
+    from hockey.hockey_env import HockeyEnv_BasicOpponent
+
+    return HockeyEnv_BasicOpponent(weak_opponent=False)

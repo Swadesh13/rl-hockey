@@ -11,6 +11,7 @@ def eval_agent(
     num_episodes=10,
     render_mode="human",
     modes=["NORMAL"],
+    verbose=2,
 ):
     """
     Runs an agent in a Hockey environment for a specified number of episodes.
@@ -27,7 +28,7 @@ def eval_agent(
     - mean_reward: Mean reward over all episodes.
     - std_reward: Standard deviation of rewards over all episodes.
     """
-    print("eval_agent")
+    # print("eval_agent")
 
     if opponent_right is None:
         print("No opponent provided. Using BasicOpponent Strong.")
@@ -37,9 +38,10 @@ def eval_agent(
         print("No environment provided. Using HockeyEnv.")
         env = h_env.HockeyEnv_BasicOpponent()
 
-    print(
-        f"==> {player_left=} VS {opponent_right}(weak={opponent_right.weak}) <== \n{num_episodes=} {render_mode=} {modes=}"
-    )
+    if verbose > 0:
+        print(f"==> {player_left=} VS {opponent_right} <==")
+        # print(f"(weak={opponent_right.weak})")
+        # print(f"{num_episodes=} {render_mode=} {modes=}")
 
     total_rewards = []
     win_counts = {"Agent Wins": 0, "Opponent Wins": 0, "Draws": 0}
@@ -78,20 +80,29 @@ def eval_agent(
         else:
             win_counts["Draws"] += 1
 
-        print(
-            f"Episode {episode + 1:<3} Reward: {episode_reward:>6.2f} | Winner: {get_winner_name(info['winner'])}"
-        )
+        if verbose > 1:
+            print(
+                f"Episode {episode + 1:<3} Reward: {episode_reward:>6.2f} | Winner: {get_winner_name(info['winner'])}"
+            )
 
     env.close()
 
     # Calculate and return mean reward and standard deviation
     mean_reward = np.mean(total_rewards)
     std_reward = np.std(total_rewards)
-    print(f"Overall Avg Reward: {mean_reward:>5.2f} ± {std_reward:.2f}")
     win_rate = win_counts["Agent Wins"] / num_episodes
-    print(f"Win Statistics: {win_counts} win_rate={win_rate:.2f}%")
+    if verbose > 0:
+        print(f"Overall Avg Reward: {mean_reward:>5.2f} ± {std_reward:.2f}")
+        print(f"Win Statistics: {win_counts} win_rate={win_rate:.2f}%")
 
-    return mean_reward, std_reward
+    info = {
+        "mean_reward": mean_reward,
+        "std_reward": std_reward,
+        "win_counts": win_counts,
+        "win_rate": win_rate,
+    }
+
+    return info
 
 
 def get_winner_name(winner):

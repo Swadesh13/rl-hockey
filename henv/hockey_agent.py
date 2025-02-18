@@ -62,6 +62,7 @@ class HockeyAgent:
 
     def evaluate(
         self,
+        verbose,
         num_episodes: int = 10,
         render_mode: str = "human",
         opponent_right=None,
@@ -90,6 +91,7 @@ class HockeyAgent:
             render_mode=render_mode,
             modes=modes,
             env=env,
+            verbose=verbose,
         )
 
     def save(self, save_path: str = None):

@@ -227,20 +227,47 @@ if __name__ == "__main__":
         from stable_baselines3.common.monitor import Monitor
 
         from henv.env import BasicOpponent
+        from ppo.load_ppo_models import (
+            eval_against_all_models,
+            load_all_ppo_agents,
+            load_ppo_agent,
+        )
 
         WEAK = False
-
         eval_env = h_env.HockeyEnv_BasicOpponent(weak_opponent=WEAK)
 
         agent = PPO_HockeyAgent(eval_env, config=cfg, eval=True)
 
         agent.load()
-        agent.evaluate(
+        print(f"==> Loaded main agent PPO from config: {args.config}")
+
+        # === ONLY ONE OPPONENT ===
+
+        # # opponent = BasicOpponent(weak=WEAK)
+        # opponent_cfg = "models/ppo/ppo_vanilla.yaml"
+        # opponent = load_ppo_agent(opponent_cfg)
+        # print("==> Loaded opponent:", opponent_cfg)
+
+        # agent.evaluate(
+        #     num_episodes=args.eval_episodes,
+        #     render_mode="human" if not args.no_render else "rgb_array",
+        #     opponent_right=opponent,
+        #     modes=["NORMAL"],  # "TRAIN_SHOOTING", "TRAIN_DEFENSE"
+        #     env=eval_env,
+        #     verbose=2,
+        # )
+
+        # === ALL OPPONENTS ===
+        models = load_all_ppo_agents()
+        models["basic_weak"] = BasicOpponent(weak=True)
+        models["basic_strong"] = BasicOpponent(weak=False)
+
+        eval_against_all_models(
+            agent,
+            models,
+            eval_env,
+            agent_name=args.config,
             num_episodes=args.eval_episodes,
-            render_mode="human" if not args.no_render else "rgb_array",
-            opponent_right=BasicOpponent(weak=WEAK),
-            modes=["NORMAL"],  # "TRAIN_SHOOTING", "TRAIN_DEFENSE"
-            env=eval_env,
         )
 
     if not args.train and not args.eval:
