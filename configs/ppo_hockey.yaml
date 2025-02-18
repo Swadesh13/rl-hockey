@@ -18,7 +18,7 @@ rnd:
 model:
   name: ppo
   models_dir: ppo/models/
-  noise: gaussian  # Options: pink, brown, white, gaussian, ornstein
+  noise: null  # Options: pink, brown, white, gaussian, ornstein
   hyperparameters:
     learning_rate: 0.00073
     n_steps: 512

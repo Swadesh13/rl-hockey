@@ -16,3 +16,13 @@ ppo_offensive_pressure.zip
 - ppo/logs/rewards5/PPO_3
 - base ppo with offensive pressure reward
 - eval mean reward 10.50 at step 23,936,000
+
+ppo_rnd_e1_i0.01.zip
+- ppo/logs/rnd/PPO_15
+- ppo + rnd with extrinsic reward multiplier 1 and intrinsic 0.01
+- Best eval/mean_reward = 10.45 at step 37,984,000
+
+ppo_pp+op.zip
+- ppo/logs/threerews/PPO_2
+- custom rewards: puck_proximity + offensive_pressure
+- no noise

@@ -178,11 +178,9 @@ cython_debug/
 .pypirc
 
 PPOGridSearch.*
-grid_jobs_ppo*
-activate_env.sh
-ppo_overnight.sh
+jobs/
+utils/plots/ppo*
 
 td3/models*/*
-grid_*.sh
 
 td7/__pycache__*/*
