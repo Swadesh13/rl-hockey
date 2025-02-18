@@ -119,6 +119,7 @@ class TD7:
         priority = tdLoss.max(1)[0].clamp(min=self.hyperparameters.min_priority).pow(self.hyperparameters.alpha)
         self.replayBuffer.updatePriority(priority)
 
+        actorLoss = None
         if self.trainingSteps % self.hyperparameters.policy_freq == 0:
             actor = self.actor(state, fixedZs)
             fixedZsa = self.fixedEncoder.zsa(fixedZs, actor)
@@ -140,50 +141,83 @@ class TD7:
             self.maxTarget = self.maxValue
             self.minTarget = self.minValue
 
-    def addEvalRes(self,timeStep : int , avgReward : float , stdReward : float) -> None:
-        path = os.path.join(self.modelSaveDir, "eval.csv")
-        fileExists = os.path.exists(path)
+        return {
+            "encoder_loss": encoderLoss.item(),
+            "critic_loss": criticLoss.item(),
+            "actor_loss": actorLoss.item() if actorLoss is not None else None
+        }
 
-        with open(path, mode="a") as f:
-            writer = csv.writer(f)
 
-            if not fileExists:
-                writer.writerow(["Time Step", "Average Reward", "Reward Std"])
+    def saveModel(self, dir : str) -> None:
 
-            writer.writerow([timeStep, avgReward, stdReward])
-
-    def saveModel(self) -> None:
-        os.makedirs(self.modelSaveDir, exist_ok=True)
+        path = os.path.join(dir, "model_checkpoint.pt")
 
         torch.save({
-        'actor': self.actor.state_dict(),
-        'critic': self.critic.state_dict(),
-        'encoder': self.encoder.state_dict(),
-        'actor_optimizer': self.actorOptimizer.state_dict(),
-        'critic_optimizer': self.criticOptimizer.state_dict(),
-        'encoder_optimizer': self.encoderOptimizer.state_dict(),
-        'training_steps': self.trainingSteps
-        }, os.path.join(self.modelSaveDir, "checkpoint.pt"))
+            'actor': self.actor.state_dict(),
+            'actorOptimizer': self.actorOptimizer.state_dict(),
+            'actorTarget': self.actorTarget.state_dict(),
 
-        with open(os.path.join(self.modelSaveDir, "info.json"), "w") as f:
-            json.dump(self.config, f, indent=4)
+            'critic': self.critic.state_dict(),
+            'criticOptimizer': self.criticOptimizer.state_dict(),
+            'criticTarget': self.criticTarget.state_dict(),
+
+            'encoder': self.encoder.state_dict(),
+            'encoderOptimizer': self.encoderOptimizer.state_dict(),
+            'fixedEncoder': self.fixedEncoder.state_dict(),
+            'fixedEncoderTarget': self.fixedEncoderTarget.state_dict(),
+
+            'trainingSteps': self.trainingSteps,
+            'minValue': self.minValue,
+            'maxValue': self.maxValue,
+            'minTarget': self.minTarget,
+            'maxTarget': self.maxTarget,
+
+            'epsSinceUpdate': self.epsSinceUpdate,
+            'timestepsSinceUpdate': self.timestepsSinceUpdate,
+            'maxEpsBeforeUpdate': self.maxEpsBeforeUpdate,
+            'minReturn': self.minReturn,
+            'bestMinReturn': self.bestMinReturn,
+
+            'checkpointActor': self.checkpointActor.state_dict(),
+            'checkpointEncoder': self.checkpointEncoder.state_dict(),
+        }, path)
 
         print(f"Model saved to {self.modelSaveDir}")
 
-    def loadModel(self, path: str) -> None:
-        path = os.path.join(self.config.models_dir, self.config.name, path, "checkpoint.pt")
+
+    def loadModel(self, dir: str) -> None:
+        path = os.path.join(dir, "model_checkpoint.pt")
         
         checkpoint = torch.load(path, map_location=self.device)
 
         self.actor.load_state_dict(checkpoint['actor'])
+        self.actorTarget.load_state_dict(checkpoint['actorTarget'])
+        self.actorOptimizer.load_state_dict(checkpoint['actorOptimizer'])
+
         self.critic.load_state_dict(checkpoint['critic'])
+        self.criticTarget.load_state_dict(checkpoint['criticTarget'])
+        self.criticOptimizer.load_state_dict(checkpoint['criticOptimizer'])
+
         self.encoder.load_state_dict(checkpoint['encoder'])
+        self.encoderOptimizer.load_state_dict(checkpoint['encoderOptimizer'])
+        self.fixedEncoder.load_state_dict(checkpoint['fixedEncoder'])
+        self.fixedEncoderTarget.load_state_dict(checkpoint['fixedEncoderTarget'])
 
-        self.actorOptimizer.load_state_dict(checkpoint['actor_optimizer'])
-        self.criticOptimizer.load_state_dict(checkpoint['critic_optimizer'])
-        self.encoderOptimizer.load_state_dict(checkpoint['encoder_optimizer'])
+        self.trainingSteps = checkpoint['trainingSteps']
+        self.minValue = checkpoint['minValue']
+        self.maxValue = checkpoint['maxValue']
+        self.minTarget = checkpoint['minTarget']
+        self.maxTarget = checkpoint['maxTarget']
 
-        self.trainingSteps = checkpoint.get('training_steps', 0)
+        self.epsSinceUpdate = checkpoint['epsSinceUpdate']
+        self.timestepsSinceUpdate = checkpoint['timestepsSinceUpdate']
+        self.maxEpsBeforeUpdate = checkpoint['maxEpsBeforeUpdate']
+        self.minReturn = checkpoint['minReturn']
+        self.bestMinReturn = checkpoint['bestMinReturn']
+
+        self.checkpointActor.load_state_dict(checkpoint['checkpointActor'])
+        self.checkpointEncoder.load_state_dict(checkpoint['checkpointEncoder'])
+
         print(f"Model loaded from {path}")
 
     def _setPER(self) -> None:

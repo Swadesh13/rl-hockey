@@ -4,7 +4,7 @@ train_env:
   render_mode: None
   env_name: "Hockey-v0"
   weak_opponent: false
-  additional_rewards: []
+  additional_rewards: ["puck_proximity"]
   reward_multiplier: 1.0
 
 eval_env:
@@ -15,6 +15,10 @@ eval_env:
   reward_multiplier: 1.0
   additional_rewards: []
 
+
+agent:
+  save_dir: "models/"
+
 model:
   name: "td7"
   models_dir: "models/"
@@ -22,16 +26,16 @@ model:
     exploration_noise: 
       type : "normal"
       magnitude : 0.1
-    alpha: 0.4
-    buffer_size: 1_000_000  
-    learning_starts: 10_000 
-    batch_size: 256  
-    discount: 0.99
+    alpha: 0.5
+    buffer_size: 2_000_000  
+    learning_starts: 7500 
+    batch_size: 512  
+    discount: 0.98
     target_update_rate: 64
-    target_policy_noise: 0.2
-    policy_freq: 2
-    noise_clip: 0.2
-    learning_rate: 0.0003
+    target_policy_noise: 0.3
+    policy_freq: 4
+    noise_clip: 0.25
+    learning_rate: 0.00035
     zs_dim: 256
     h_dim: 256
     device: "cuda"
@@ -43,7 +47,7 @@ model:
     min_priority: 1
 
 training:
-  total_timesteps: 100_000
+  total_timesteps: 125_000
   save_model_every: 10_000
   eval_starts: 10_000
   eval_every: 10_000
@@ -52,6 +56,6 @@ training:
   log_interval: 1000
 
 evaluation:
-  model_date: 2025-02-09_18-29-50
-  ep_num: 20
-  render_mode: "human"
+  model_date: 2025-02-16_03-59-51
+  ep_num: 1_000
+  render_mode: "rgb_array"

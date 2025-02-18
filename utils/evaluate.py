@@ -27,13 +27,22 @@ def eval_agent(
     - mean_reward: Mean reward over all episodes.
     - std_reward: Standard deviation of rewards over all episodes.
     """
+    print("eval_agent")
+
     if opponent_right is None:
+        print("No opponent provided. Using BasicOpponent Strong.")
         opponent_right = BasicOpponent(weak=False)
 
     if env is None:
-        env = h_env.HockeyEnv()
+        print("No environment provided. Using HockeyEnv.")
+        env = h_env.HockeyEnv_BasicOpponent()
+
+    print(
+        f"==> {player_left=} VS {opponent_right}(weak={opponent_right.weak}) <== \n{num_episodes=} {render_mode=} {modes=}"
+    )
 
     total_rewards = []
+    win_counts = {"Agent Wins": 0, "Opponent Wins": 0, "Draws": 0}
     episodes_per_mode = num_episodes // len(modes)
 
     for episode in range(num_episodes):
@@ -43,7 +52,7 @@ def eval_agent(
             mode_idx = len(modes) - 1
         mode = modes[mode_idx]
         obs, info = env.reset(mode=mode)  # Reset environment with the new mode
-        print(f"Starting Episode {episode + 1} in Mode: {mode}")
+        # print(f"Starting Episode {episode + 1} in Mode: {mode}")
 
         obs_agent2 = env.obs_agent_two()
         episode_reward = 0
@@ -60,7 +69,18 @@ def eval_agent(
                 break
 
         total_rewards.append(episode_reward)
-        print(f"Episode {episode + 1:<3} Reward: {episode_reward:>5.2f}")
+
+        # Determine winner
+        if info["winner"] == 1:
+            win_counts["Agent Wins"] += 1
+        elif info["winner"] == -1:
+            win_counts["Opponent Wins"] += 1
+        else:
+            win_counts["Draws"] += 1
+
+        print(
+            f"Episode {episode + 1:<3} Reward: {episode_reward:>6.2f} | Winner: {get_winner_name(info['winner'])}"
+        )
 
     env.close()
 
@@ -68,5 +88,18 @@ def eval_agent(
     mean_reward = np.mean(total_rewards)
     std_reward = np.std(total_rewards)
     print(f"Overall Avg Reward: {mean_reward:>5.2f} ± {std_reward:.2f}")
+    win_rate = win_counts["Agent Wins"] / num_episodes
+    print(f"Win Statistics: {win_counts} win_rate={win_rate:.2f}%")
 
     return mean_reward, std_reward
+
+
+def get_winner_name(winner):
+    if winner == 1:
+        return "Left (Agent)"
+    elif winner == -1:
+        return "Right (Opponent)"
+    elif winner == 0:
+        return "Draw"
+    else:
+        return "Unknown"

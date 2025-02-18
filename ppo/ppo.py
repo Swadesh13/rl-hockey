@@ -19,12 +19,12 @@ from stable_baselines3.common.noise import (
 from henv.env import HockeyEnv_SB3
 from henv.hockey_agent import HockeyAgent
 from utils.evaluate import eval_agent
-from utils.noise import ColoredActionNoise, ColoredNoiseProcess
+from utils.noise import ColoredActionNoise
 from utils.parsing import *
 
 
 class PPO_HockeyAgent(HockeyAgent):
-    def __init__(self, env, config):
+    def __init__(self, env, config, eval=False):
         """
         Initializes the PPO agent for the Hockey environment.
 
@@ -35,7 +35,8 @@ class PPO_HockeyAgent(HockeyAgent):
         super().__init__(env, config)
         self.use_rnd = config.rnd.enabled
 
-        self._create_logging_dir()
+        if not eval:
+            self._create_logging_dir()
 
         # Initialize noise
         self.noise = None
@@ -50,30 +51,36 @@ class PPO_HockeyAgent(HockeyAgent):
         policy_kwargs["activation_fn"] = get_activation_fn_from_str(
             policy_kwargs["activation_fn"]
         )
-        # if self.use_rnd:
-        #     policy_kwargs["net_arch"] = [
-        #         dict(vf=[256, 256], pi=[256, 256])
-        #     ]  # Two heads
 
         # Remove `policy_kwargs` from hyperparameters to avoid duplication
         hyperparameters = self.config.model.hyperparameters.copy()
         hyperparameters.pop("policy_kwargs", None)
 
-        self.model = PPO(
-            "MlpPolicy",
-            self.env,
-            verbose=self.config.logging.verbose,
-            tensorboard_log=self.save_dir,
-            policy_kwargs=policy_kwargs,
-            **hyperparameters,
-        )
+        if eval:
+            self.model = PPO(
+                "MlpPolicy",
+                self.env,
+                verbose=self.config.logging.verbose,
+                policy_kwargs=policy_kwargs,
+                **hyperparameters,
+            )
+        else:
+            self.model = PPO(
+                "MlpPolicy",
+                self.env,
+                verbose=self.config.logging.verbose,
+                tensorboard_log=self.save_dir,
+                policy_kwargs=policy_kwargs,
+                **hyperparameters,
+            )
 
-        # make sure it saves the tensorboard logs in the correct directory
-        new_logger = configure(self.save_dir, ["tensorboard"])
-        self.model.set_logger(new_logger)
+        if not eval:
+            # make sure it saves the tensorboard logs in the correct directory
+            new_logger = configure(self.save_dir, ["tensorboard"])
+            self.model.set_logger(new_logger)
 
-        # save the configuration
-        save_config(os.path.join(self.save_dir, "config.yaml"), self.config)
+            # save the configuration
+            save_config(os.path.join(self.save_dir, "config.yaml"), self.config)
 
     def train(
         self,
@@ -161,27 +168,28 @@ if __name__ == "__main__":
         print_config(cfg)
         print_args(args)
 
-    from henv.env import HockeyEnv_SB3, HockeyEnv_SB3_RND
-
-    if cfg.rnd.enabled:
-        env = HockeyEnv_SB3_RND.make_vec_env_rnd(
-            n_envs=cfg.environment.n_envs,
-            config=cfg,
-            weak_opponent=False,
-            additional_rewards=cfg.environment.additional_rewards,
-            reward_multiplier=cfg.environment.reward_multiplier,
-        )
-    else:
-        env = HockeyEnv_SB3.make_vec_env(
-            n_envs=cfg.environment.n_envs,
-            weak_opponent=False,
-            additional_rewards=cfg.environment.additional_rewards,
-            reward_multiplier=cfg.environment.reward_multiplier,
-        )
-
-    agent = PPO_HockeyAgent(env, config=cfg)
-
     if args.train:
+        from henv.env import HockeyEnv_SB3, HockeyEnv_SB3_RND
+
+        if cfg.rnd.enabled:
+            env = HockeyEnv_SB3_RND.make_vec_env_rnd(
+                n_envs=cfg.environment.n_envs,
+                config=cfg,
+                weak_opponent=False,
+                additional_rewards=cfg.environment.additional_rewards,
+                reward_multiplier=cfg.environment.reward_multiplier,
+            )
+        else:
+            env = HockeyEnv_SB3.make_vec_env(
+                n_envs=cfg.environment.n_envs,
+                weak_opponent=False,
+                additional_rewards=cfg.environment.additional_rewards,
+                reward_multiplier=cfg.environment.reward_multiplier,
+            )
+
+        agent = PPO_HockeyAgent(env, config=cfg)
+
+        print("Training agent...")
         from stable_baselines3.common.monitor import Monitor
 
         callback_list = []
@@ -214,10 +222,26 @@ if __name__ == "__main__":
         # agent.save()
 
     if args.eval:
+        print("Evaluating agent...")
+        import hockey.hockey_env as h_env
+        from stable_baselines3.common.monitor import Monitor
+
+        from henv.env import BasicOpponent
+
+        WEAK = False
+
+        eval_env = h_env.HockeyEnv_BasicOpponent(weak_opponent=WEAK)
+
+        agent = PPO_HockeyAgent(eval_env, config=cfg, eval=True)
+
         agent.load()
         agent.evaluate(
             num_episodes=args.eval_episodes,
             render_mode="human" if not args.no_render else "rgb_array",
-            opponent_right=None,
-            modes=["NORMAL", "TRAIN_SHOOTING", "TRAIN_DEFENSE"],
+            opponent_right=BasicOpponent(weak=WEAK),
+            modes=["NORMAL"],  # "TRAIN_SHOOTING", "TRAIN_DEFENSE"
+            env=eval_env,
         )
+
+    if not args.train and not args.eval:
+        print("No action specified. add --train or --eval to run the agent.")

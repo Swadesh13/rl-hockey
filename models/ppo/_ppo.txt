@@ -1,21 +1,27 @@
 ppo_vanilla.zip 
 - ppo/logs/PPO_vanilla 
 - its just PPO
+8.19 ± 4.87
 
 ppo_gaussian_noise.zip 
 - ppo/logs/noises2/PPO_0
 - its vanilla + gaussian noise
 - eval mean reward 10.47 at step 34,240,000
+8.58 ± 3.43
 
 ppo_puck_proximity.zip
 - ppo/logs/rewards5/PPO_7
 - base ppo with puck proximity reward
 - eval mean reward 10.52 at step 31,904,000
+Overall Avg Reward:  9.34 ± 1.66
+Win Statistics: {'Agent Wins': 994, 'Opponent Wins': 5, 'Draws': 1} win_rate=0.99%
 
 ppo_offensive_pressure.zip
 - ppo/logs/rewards5/PPO_3
 - base ppo with offensive pressure reward
 - eval mean reward 10.50 at step 23,936,000
+Overall Avg Reward:  8.96 ± 2.69
+Win Statistics: {'Agent Wins': 976, 'Opponent Wins': 10, 'Draws': 14} win_rate=0.98%
 
 ppo_rnd_e1_i0.01.zip
 - ppo/logs/rnd/PPO_15
@@ -26,3 +32,6 @@ ppo_pp+op.zip
 - ppo/logs/threerews/PPO_2
 - custom rewards: puck_proximity + offensive_pressure
 - no noise
+
+
+

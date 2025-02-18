@@ -66,6 +66,7 @@ class HockeyAgent:
         render_mode: str = "human",
         opponent_right=None,
         modes=["NORMAL"],
+        env=None,
     ):
         """
         Evaluates the trained model in the environment.
@@ -88,6 +89,7 @@ class HockeyAgent:
             num_episodes=num_episodes,
             render_mode=render_mode,
             modes=modes,
+            env=env,
         )
 
     def save(self, save_path: str = None):
