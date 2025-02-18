@@ -32,6 +32,6 @@ ppo_pp+op.zip
 - ppo/logs/threerews/PPO_2
 - custom rewards: puck_proximity + offensive_pressure
 - no noise
-
+- Best eval/mean_reward = 10.56 at step 37,312,000
 
 
