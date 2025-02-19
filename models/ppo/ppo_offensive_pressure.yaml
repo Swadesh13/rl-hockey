@@ -43,6 +43,6 @@ training:
   model_path: models/ppo/ppo_offensive_pressure
   save_model_every: 50000
 logging:
-  log_dir: ./logs/
-  verbose: 1
-  tensorboard: ./ppo/logs/rewards5/
+  log_dir: ./league_logs/
+  verbose: 0
+  tensorboard: ./ppo/logs/temp/

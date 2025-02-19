@@ -7,14 +7,17 @@ from utils.parsing import get_config_from_args, parse_args
 args = parse_args()
 cfg = get_config_from_args(args, cfgnode=True)
 
-env = HockeyEnv_SB3(False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier)
+env = HockeyEnv_SB3(
+    False, cfg.environment.additional_rewards, cfg.environment.reward_multiplier
+)
 
-agent = SAC_HockeyAgent(env, cfg)
-# agent = PPO_HockeyAgent(env, cfg)
+# agent = SAC_HockeyAgent(env, cfg)
+agent = PPO_HockeyAgent(env, cfg)
 
-models = load_saved_models(True, False, True, env)
-print(models)
-models.append(BasicOpponent(False))
+models = load_saved_models(sac=False, td3=False, ppo=True, env=env)
+print("\nModels loaded:")
+models.append(BasicOpponent(weak=False))
+print(models, "\n")
 
 league = League(
     agent,
@@ -24,4 +27,12 @@ league = League(
     reward_multiplier=cfg.environment.reward_multiplier,
 )
 
-league.train_agent_league(20, 5, 4, total_timesteps=100000, log_interval=cfg.training.log_interval)
+
+league.train_agent_league(
+    rounds=20,
+    eval_rounds=5,
+    update_opp_every_rounds=4,
+    show_score_rounds=1,
+    total_timesteps=100_000,
+    log_interval=cfg.training.log_interval,
+)

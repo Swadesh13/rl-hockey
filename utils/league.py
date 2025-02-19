@@ -115,7 +115,7 @@ class League:
 
         for i in range(1, rounds + 1):
             opponent = self.sample_opponent()
-            print("Opponent sampled:", opponent)
+            print(f"\nROUND {i}: Opponent sampled:", opponent)
             self.env.set_opponent(opponent)
             self.current_agent.train(**train_kwargs)
             for _ in range(eval_rounds):
@@ -173,32 +173,25 @@ def load_saved_models(sac=False, td3=False, ppo=False, env=None, cfg=[]):
                 )
             )
         )
-    if td3:
-        from td3.td3_hockey import TD3_HockeyAgent
+    # if td3:
+    #     from td3.td3_hockey import TD3_HockeyAgent
 
-        models.extend(
-            list(
-                _load(
-                    env,
-                    cfg[1] if len(cfg) == 2 else get_default_td3_config(),
-                    "models/td3/*.zip",
-                    TD3_HockeyAgent,
-                )
-            )
-        )
+    #     models.extend(
+    #         list(
+    #             _load(
+    #                 env,
+    #                 cfg[1] if len(cfg) == 2 else get_default_td3_config(),
+    #                 "models/td3/*.zip",
+    #                 TD3_HockeyAgent,
+    #             )
+    #         )
+    #     )
     if ppo:
-        from ppo.ppo import PPO_HockeyAgent
+        from ppo.load_ppo_models import load_all_ppo_agents
 
-        models.extend(
-            list(
-                _load(
-                    env,
-                    cfg[2] if len(cfg) == 3 else get_default_ppo_config(),
-                    "models/ppo/*.zip",
-                    PPO_HockeyAgent,
-                )
-            )
-        )
+        ms = load_all_ppo_agents()
+        models.extend(ms.values())
+
     return models
 
 
@@ -229,8 +222,8 @@ if __name__ == "__main__":
         from sac.sac import SAC_HockeyAgent as Agent
     elif CURRENT_MAIN == "ppo":
         from ppo.ppo import PPO_HockeyAgent as Agent
-    elif CURRENT_MAIN == "td3":
-        from td3.td3_hockey import TD3_HockeyAgent as Agent
+    # elif CURRENT_MAIN == "td3":
+    #     from td3.td3_hockey import TD3_HockeyAgent as Agent
 
     agent = Agent(env, cfg)
     # Load the agent as well

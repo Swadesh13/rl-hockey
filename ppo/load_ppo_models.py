@@ -57,7 +57,9 @@ def eval_against_all_models(agent, models, eval_env, agent_name, num_episodes=10
     - num_episodes: Number of episodes to evaluate.
     - models: dictionary of models to evaluate against. {name: agent}
     """
-    print(f"\n ===== Evaluating *{agent_name}* against all models =====\n")
+    print(
+        f"\n ===== Evaluating *{agent_name}* against all models ({num_episodes} episodes) =====\n"
+    )
 
     # Collect evaluation data
     data = []
@@ -83,6 +85,7 @@ def eval_against_all_models(agent, models, eval_env, agent_name, num_episodes=10
     # Create a DataFrame
     df = pd.DataFrame(data)
 
+    print("==> Plotting ...")
     # Create a figure with two subplots
     fig, ax1 = plt.subplots(2, 1, figsize=(10, 8))
 
@@ -100,7 +103,7 @@ def eval_against_all_models(agent, models, eval_env, agent_name, num_episodes=10
         label="Mean Reward ± Std",
         color="blue",
     )
-    ax1[0].set_title("Mean Reward")
+    ax1[0].set_title(f"Mean Reward {agent_name}")
     ax1[0].set_ylabel("Mean Reward")
     ax1[0].set_xticks(range(len(df["Model"])))
     ax1[0].set_xticklabels(df["Model"], rotation=45, ha="right")

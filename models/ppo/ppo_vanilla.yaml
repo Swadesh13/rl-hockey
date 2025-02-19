@@ -43,5 +43,5 @@ training:
   save_model_every: 50000
 logging:
   log_dir: ./logs/
-  verbose: 1
-  tensorboard: ./ppo/logs/
+  verbose: 0
+  tensorboard: ./ppo/logs/temp/
