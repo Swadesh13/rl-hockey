@@ -11,20 +11,29 @@ import json
 from datetime import datetime
 
 class TD7Agent(HockeyAgent):
-    def __init__(self,config : CfgNode, model : TD7, trainEnv : gym.vector.AsyncVectorEnv ,evalEnv : HockeyEnv_SB3):
-        super().__init__(HockeyEnv_SB3(), config) # HockeyEnv_SB3() is a placeholder, the actual env is passed as an argument
-
-        self.config = config
-        self.model = model
-        self.trainEnv = trainEnv
-        self.evalEnv = evalEnv
-
-        self.saveDir = os.path.join(self.config.agent.save_dir, config.model.name,datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-        os.makedirs(self.saveDir, exist_ok=True)
-
-
-        with open(os.path.join(self.saveDir, "config.json"), "w") as f:
-            json.dump(self.config, f, indent=4)
+    def __init__(self,config : CfgNode, model : TD7, trainEnv : gym.vector.AsyncVectorEnv ,evalEnv : HockeyEnv_SB3, save : bool = True ,loadModel : bool = False, modelsDir : str = None ,modelName : str = None):
+        if not loadModel:
+            super().__init__(HockeyEnv_SB3(), config)
+            self.config = config
+            self.model = model
+            self.trainEnv = trainEnv
+            self.evalEnv = evalEnv
+            self.saveDir = os.path.join(self.config.agent.save_dir, config.model.name,datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+            if save:
+                os.makedirs(self.saveDir, exist_ok=True)
+                with open(os.path.join(self.saveDir, "config.json"), "w") as f:
+                    json.dump(self.config, f, indent=4)
+        else:
+            modelPath = os.path.join(modelsDir,"td7",modelName)
+            print(modelPath)
+            configPath = os.path.join(modelPath, "config.json")
+            with open(configPath, "r") as f:
+                config_dict = json.load(f)
+            self.config = CfgNode(config_dict)
+            print(self.config)
+            super().__init__(HockeyEnv_SB3(), self.config) 
+            self.evalEnv = evalEnv or HockeyEnv_SB3()
+            self.load(path=modelPath)
 
     def train(
         self,
@@ -112,7 +121,7 @@ class TD7Agent(HockeyAgent):
                 writer.writerows(rows)  
                 trainStatFile.flush()  
                 encoderLoss.clear()
-                criticLoss.clear()
+                criticLoss.clear() 
                 actorLoss.clear()
                 avgStepReward.clear()
 
@@ -125,7 +134,13 @@ class TD7Agent(HockeyAgent):
         self.model.saveModel(dir= self.saveDir)
 
     def load(self, path: str = None):
-        self.model.loadModel(dir= os.path.join(self.config.agent.save_dir, self.config.model.name,self.config.evaluation.model_date))  
+        self.model = TD7(
+            config = self.config.model,
+            actionSpace = self.evalEnv.action_space,
+            obsSpace = self.evalEnv.observation_space
+        )
+        dir = path or os.path.join(self.config.agent.save_dir, self.config.model.name,self.config.evaluation.model_name)
+        self.model.loadModel(dir=dir)  
 
     def evalMidTrain(self, timeStep : int, episode : int, evalEpisodeNum : int):
         print(f" ---Evaluation at Time step: {timeStep}, Episode: {episode} ---")

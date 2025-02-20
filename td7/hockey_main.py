@@ -1,6 +1,7 @@
 from utils.parsing import parse_args, get_config_from_args, print_config, print_args
 from .initilizer import CreateHoeckyEnv,CreateHoeckyEnvs
 from .model import TD7
+from utils.load import LoadTD7Agents
 from .agent import TD7Agent
 
 if __name__ == "__main__":
@@ -10,6 +11,8 @@ if __name__ == "__main__":
     if not args.quiet:
         print_config(config)
         print_args(args)
+
+    
 
     evalEnv = CreateHoeckyEnv(config.eval_env)
     trainEnv = CreateHoeckyEnvs(config.train_env)
@@ -24,7 +27,8 @@ if __name__ == "__main__":
         config = config,
         model = model,
         trainEnv = trainEnv,
-        evalEnv = evalEnv
+        evalEnv = evalEnv,
+        save= args.train
     )
 
     if args.train:
@@ -33,5 +37,5 @@ if __name__ == "__main__":
         agent.save()
 
     if args.eval:
-        agent.load(config.evaluation.model_date)
+        agent.load()
         agent.evaluate()
