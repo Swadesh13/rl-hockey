@@ -159,6 +159,19 @@ class PPO_HockeyAgent(HockeyAgent):
         print("Saving files at:", self.save_dir)
         os.makedirs(self.save_dir, exist_ok=True)
 
+    def set_opponent(self, opponent, opponent_name=None):
+        """
+        Set a new opponent for the environment.
+        The opponent must implement a `predict()` method.
+        """
+        if hasattr(self.env, "envs"):
+            for single_env in self.env.envs:
+                single_env.opponent = opponent
+            print("Opponent updated in all vectorized environments to", opponent_name)
+        else:
+            self.env.opponent = opponent
+            print("Opponent updated in the single environment to", opponent_name)
+
 
 if __name__ == "__main__":
     args = parse_args()
@@ -188,6 +201,17 @@ if __name__ == "__main__":
             )
 
         agent = PPO_HockeyAgent(env, config=cfg)
+
+        agent.load()  # TODO make a parser for this
+
+        # --- CODE TO SET A DIFFERENT OPPONENT ---
+        # For example, load a different PPO agent as the opponent.
+        from ppo.load_ppo_models import load_ppo_agent
+
+        opponent_config_path = "models/ppo/ppo_vanilla.yaml"
+        opponent_agent = load_ppo_agent(opponent_config_path)
+        agent.set_opponent(opponent_agent, opponent_name=opponent_config_path)
+        # --------------------------------------------------
 
         print("Training agent...")
         from stable_baselines3.common.monitor import Monitor
@@ -230,6 +254,7 @@ if __name__ == "__main__":
         from ppo.load_ppo_models import (
             eval_against_all_models,
             load_all_ppo_agents,
+            load_all_sac_agents,
             load_ppo_agent,
         )
 
@@ -259,6 +284,7 @@ if __name__ == "__main__":
 
         # === ALL OPPONENTS ===
         models = load_all_ppo_agents()
+        models.update(load_all_sac_agents())
         models["basic_weak"] = BasicOpponent(weak=True)
         models["basic_strong"] = BasicOpponent(weak=False)
 

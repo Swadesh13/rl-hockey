@@ -1,4 +1,8 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from ppo.ppo import PPO_HockeyAgent
+from sac.sac import SAC_HockeyAgent
 from utils.parsing import convert_to_cfgnode, get_eval_env, load_config
 
 
@@ -43,11 +47,26 @@ def load_all_ppo_agents():
     return agents
 
 
-import matplotlib.pyplot as plt
-import pandas as pd
+def load_all_sac_agents():
+    cfg = convert_to_cfgnode(load_config("configs/sac_hockey.yaml"))
+
+    eval_env = get_eval_env()
+    models = {}
+
+    sac_vanilla = SAC_HockeyAgent(eval_env, config=cfg)
+    sac_vanilla.load("models/sac/sac_vanilla")
+    models["sac_vanilla"] = sac_vanilla
+
+    sac_pink = SAC_HockeyAgent(eval_env, config=cfg)
+    sac_pink.load("models/sac/sac_pink")
+    models["sac_pink"] = sac_pink
+
+    return models
 
 
-def eval_against_all_models(agent, models, eval_env, agent_name, num_episodes=10):
+def eval_against_all_models(
+    agent, models, eval_env, agent_name, num_episodes=10, save_path=None
+):
     """
     Evaluate the agent against all saved models and plot Mean Reward with Std Error Bars
     while also displaying Win Rate as a bar chart.
@@ -60,6 +79,10 @@ def eval_against_all_models(agent, models, eval_env, agent_name, num_episodes=10
     print(
         f"\n ===== Evaluating *{agent_name}* against all models ({num_episodes} episodes) =====\n"
     )
+    print("Specifically against:")
+    for model_name, model in models.items():
+        print(f"\t{model_name}: {model}")
+    print("\n")
 
     # Collect evaluation data
     data = []
@@ -125,7 +148,11 @@ def eval_against_all_models(agent, models, eval_env, agent_name, num_episodes=10
 
     # Adjust layout and show plot
     plt.tight_layout()
-    plt.show()
+    if save_path:
+        plt.savefig(save_path)
+        print(f"Plot saved at {save_path}")
+    else:
+        plt.show()
 
     # Print table of results
     print(df.to_string(index=False))
