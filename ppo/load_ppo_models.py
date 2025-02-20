@@ -109,6 +109,7 @@ def eval_against_all_models(
     df = pd.DataFrame(data)
 
     print("==> Plotting ...")
+
     # Create a figure with two subplots
     fig, ax1 = plt.subplots(2, 1, figsize=(10, 8))
 
@@ -116,9 +117,12 @@ def eval_against_all_models(
     ax1[0].axhspan(0, max(df["Mean Reward"].max(), 0), facecolor="green", alpha=0.15)
     ax1[0].axhspan(min(df["Mean Reward"].min(), 0), 0, facecolor="red", alpha=0.15)
 
+    # Set x positions as integers
+    x_positions = range(len(df["Model"]))
+
     # Plot Mean Reward as points with Std Reward as error bars
     ax1[0].errorbar(
-        df["Model"],
+        x_positions,
         df["Mean Reward"],
         yerr=df["Std Reward"],
         fmt="o",
@@ -128,25 +132,50 @@ def eval_against_all_models(
     )
     ax1[0].set_title(f"Mean Reward {agent_name}")
     ax1[0].set_ylabel("Mean Reward")
-    ax1[0].set_xticks(range(len(df["Model"])))
+    ax1[0].set_xticks(x_positions)
     ax1[0].set_xticklabels(df["Model"], rotation=45, ha="right")
     ax1[0].legend()
     ax1[0].grid(True)
+
+    # Annotate each point with its exact Mean Reward value
+    for x, mean in zip(x_positions, df["Mean Reward"]):
+        ax1[0].text(
+            x,
+            mean,
+            f"{mean:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            fontweight="bold",
+        )
 
     # Background shading for Win Rate (green above 0.5, red below 0.5)
     ax1[1].axhspan(0.5, 1, facecolor="green", alpha=0.15)
     ax1[1].axhspan(0, 0.5, facecolor="red", alpha=0.15)
 
     # Plot Win Rate as a bar chart
-    ax1[1].bar(df["Model"], df["Win Rate"], color="orange", label="Win Rate")
+    bars = ax1[1].bar(x_positions, df["Win Rate"], color="orange", label="Win Rate")
     ax1[1].set_title("Win Rate")
     ax1[1].set_ylabel("Win Rate")
-    ax1[1].set_xticks(range(len(df["Model"])))
+    ax1[1].set_xticks(x_positions)
     ax1[1].set_xticklabels(df["Model"], rotation=45, ha="right")
     ax1[1].legend()
     ax1[1].grid(True)
 
-    # Adjust layout and show plot
+    # Annotate each bar with its exact Win Rate value
+    for bar in bars:
+        height = bar.get_height()
+        ax1[1].text(
+            bar.get_x() + bar.get_width() / 2,
+            height,
+            f"{height:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            fontweight="bold",
+        )
+
+    # Adjust layout and show/save plot
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path)
