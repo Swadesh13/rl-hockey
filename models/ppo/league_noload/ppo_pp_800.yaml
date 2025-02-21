@@ -1,11 +1,10 @@
 environment:
   env_name: Hockey-v0
-  n_envs: 32
+  n_envs: 128
   seed: 42
   reward_multiplier: 10
   additional_rewards:
   - puck_proximity
-  - offensive_pressure
 rnd:
   enabled: false
   use_only_intrinsic: false
@@ -41,9 +40,9 @@ model:
 training:
   total_timesteps: 40000000
   log_interval: 1
-  model_path: models/ppo/ppo_pp+op
+  model_path: models/ppo/league_noload/ppo_pp_800
   save_model_every: 50000
 logging:
   log_dir: ./logs/
   verbose: 0
-  tensorboard: ./ppo/logs/weak/
+  tensorboard: ./ppo/logs/allNL/

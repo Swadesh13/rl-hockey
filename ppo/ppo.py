@@ -188,14 +188,14 @@ if __name__ == "__main__":
             env = HockeyEnv_SB3_RND.make_vec_env_rnd(
                 n_envs=cfg.environment.n_envs,
                 config=cfg,
-                weak_opponent=False,
+                weak_opponent=True,
                 additional_rewards=cfg.environment.additional_rewards,
                 reward_multiplier=cfg.environment.reward_multiplier,
             )
         else:
             env = HockeyEnv_SB3.make_vec_env(
                 n_envs=cfg.environment.n_envs,
-                weak_opponent=False,
+                weak_opponent=True,
                 additional_rewards=cfg.environment.additional_rewards,
                 reward_multiplier=cfg.environment.reward_multiplier,
             )
@@ -206,11 +206,11 @@ if __name__ == "__main__":
 
         # --- CODE TO SET A DIFFERENT OPPONENT ---
         # For example, load a different PPO agent as the opponent.
-        from ppo.load_ppo_models import load_ppo_agent
+        # from ppo.load_ppo_models import load_ppo_agent
 
-        opponent_config_path = "models/ppo/ppo_vanilla.yaml"
-        opponent_agent = load_ppo_agent(opponent_config_path)
-        agent.set_opponent(opponent_agent, opponent_name=opponent_config_path)
+        # opponent_config_path = "models/ppo/ppo_vanilla.yaml"
+        # opponent_agent = load_ppo_agent(opponent_config_path)
+        # agent.set_opponent(opponent_agent, opponent_name=opponent_config_path)
         # --------------------------------------------------
 
         print("Training agent...")

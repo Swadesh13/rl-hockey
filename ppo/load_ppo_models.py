@@ -111,7 +111,7 @@ def eval_against_all_models(
     print("==> Plotting ...")
 
     # Create a figure with two subplots
-    fig, ax1 = plt.subplots(2, 1, figsize=(10, 8))
+    fig, ax1 = plt.subplots(2, 1, figsize=(20, 16))
 
     # Background shading for Mean Reward (green above 0, red below 0)
     ax1[0].axhspan(0, max(df["Mean Reward"].max(), 0), facecolor="green", alpha=0.15)
@@ -153,9 +153,15 @@ def eval_against_all_models(
     ax1[1].axhspan(0.5, 1, facecolor="green", alpha=0.15)
     ax1[1].axhspan(0, 0.5, facecolor="red", alpha=0.15)
 
+    # Get total win rate sum
+    total=0
+    for bar in bars:
+        height = bar.get_height()
+        total += height
+    
     # Plot Win Rate as a bar chart
     bars = ax1[1].bar(x_positions, df["Win Rate"], color="orange", label="Win Rate")
-    ax1[1].set_title("Win Rate")
+    ax1[1].set_title(f"Win Rate {total}")
     ax1[1].set_ylabel("Win Rate")
     ax1[1].set_xticks(x_positions)
     ax1[1].set_xticklabels(df["Model"], rotation=45, ha="right")

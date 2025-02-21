@@ -214,7 +214,7 @@ def reward_puck_between_player_and_goal(obs):
 
 
 def reward_offensive_pressure(obs, h_env): # great
-    """ Encourages the agent to stay near the opponent’s goal to apply pressure. """
+    """ Encourages the agent to stay near the opponent's goal to apply pressure. """
     player_x = obs[0]
     goal_x = h_env.W  # Opponent's goal
 

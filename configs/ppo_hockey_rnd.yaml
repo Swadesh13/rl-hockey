@@ -4,13 +4,13 @@ environment:
   env_name: Hockey-v0
   n_envs: 4
   seed: 42
-  reward_multiplier: 10
+  reward_multiplier: 1
   additional_rewards: []
 
 rnd:
   enabled: true   # Set to false to disable RND
   # use_only_intrinsic: false  # If true, ignores extrinsic reward
-  intrinsic_reward_weight: 1  # Scale for intrinsic rewards
+  intrinsic_reward_weight: 0.01  # Scale for intrinsic rewards
   # extrinsic_reward_weight: this is just environment.reward_multiplier # Scale for extrinsic rewards
   rnd_hidden_size: 256  # Size of hidden layers for predictor network
   non_episodic: false  # If true, intrinsic rewards persist across episodes
@@ -49,6 +49,6 @@ training:
 logging:
   log_dir: ./logs/
   verbose: 1
-  tensorboard: ./ppo/logs/rnd/
+  tensorboard: ./ppo/logs/rnd_parallel/
 
 # python -m ppo.ppo --config configs/ppo_hockey_last.yaml --train -q --n_envs 64 --policy_kwargs '{"net_arch": [256, 256], "ortho_init": true, "activation_fn": "relu"}'

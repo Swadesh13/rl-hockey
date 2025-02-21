@@ -42,7 +42,7 @@
             "learning_rate": 0.0004,
             "zs_dim": 256,
             "h_dim": 256,
-            "device": "cuda",
+            "device": "cpu",
             "seed": 42,
             "use_checkpoint": false,
             "steps_before_checkpointing": 10000,

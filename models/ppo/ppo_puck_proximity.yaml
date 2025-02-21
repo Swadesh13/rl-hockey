@@ -45,4 +45,4 @@ training:
 logging:
   log_dir: ./logs/
   verbose: 0
-  tensorboard: ./ppo/logs/temp/
+  tensorboard: ./ppo/logs/weak/
