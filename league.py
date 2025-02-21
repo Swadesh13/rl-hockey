@@ -14,10 +14,10 @@ env = HockeyEnv_SB3(
 # agent = SAC_HockeyAgent(env, cfg)
 agent = PPO_HockeyAgent(env, cfg)
 
-models = load_saved_models(sac=False, td3=False, ppo=True, env=env)
+models = load_saved_models(sac=True, td7=True, ppo=True, env=env)
+models.append({"name": "basic_opponent_strong", "model": BasicOpponent(weak=False)})
 print("\nModels loaded:")
-models.append(BasicOpponent(weak=False))
-print(models, "\n")
+print(*[m["name"] for m in models], sep="\n")
 
 league = League(
     agent,
@@ -29,10 +29,10 @@ league = League(
 
 
 league.train_agent_league(
-    rounds=20,
+    rounds=40,
     eval_rounds=5,
-    update_opp_every_rounds=4,
+    update_opp_every_rounds=5,
     show_score_rounds=1,
-    total_timesteps=100_000,
+    total_timesteps=50_000,
     log_interval=cfg.training.log_interval,
 )

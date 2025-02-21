@@ -296,7 +296,7 @@ def override_args(config, args):
             config["model"]["noise"] = args.noise.lower()
 
     # RND overrides
-    if config["rnd"]["enabled"]:
+    if "rnd" in config and config["rnd"]["enabled"]:
         print("Overriding RND")
         # if args.rnd_only_intrinsic:
         #     print("Overriding RND only intrinsic")

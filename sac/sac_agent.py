@@ -1,6 +1,5 @@
 import numpy as np
 import torch as th
-from torch.nn import functional as F
 from stable_baselines3 import SAC
 from stable_baselines3.common.utils import polyak_update
 from utils.memory import ExperienceMemory, PrioritizedMemory
