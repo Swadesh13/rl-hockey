@@ -1,7 +1,7 @@
 from henv.hockey_agent import HockeyAgent
 from henv.env import HockeyEnv_SB3
 from fvcore.common.config import CfgNode
-import gym.vector
+import gymnasium.vector
 import numpy as np
 import time
 import csv
@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 
 class TD7Agent(HockeyAgent):
-    def __init__(self,config : CfgNode, model : TD7, trainEnv : gym.vector.AsyncVectorEnv ,evalEnv : HockeyEnv_SB3, save : bool = True ,loadModel : bool = False, modelsDir : str = None ,modelName : str = None):
+    def __init__(self,config : CfgNode, model : TD7, trainEnv : gymnasium.vector.AsyncVectorEnv ,evalEnv : HockeyEnv_SB3, save : bool = True ,loadModel : bool = False, modelsDir : str = None ,modelName : str = None):
         if not loadModel:
             super().__init__(HockeyEnv_SB3(), config)
             self.config = config
@@ -35,13 +35,7 @@ class TD7Agent(HockeyAgent):
             self.evalEnv = evalEnv or HockeyEnv_SB3()
             self.load(path=modelPath)
 
-    def train(
-        self,
-        total_timesteps: int = None,
-        log_interval: int = None,
-        progress_bar: bool = False,
-        callbacks : list = None,
-    ):
+    def train(self, *args, **kwargs):
         trainingConf = self.config.training
         numEnvs = self.trainEnv.num_envs
         useCheckpoint = self.config.model.hyperparameters.use_checkpoint

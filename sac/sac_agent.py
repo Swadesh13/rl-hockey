@@ -1,6 +1,5 @@
 import numpy as np
 import torch as th
-from torch.nn import functional as F
 from stable_baselines3 import SAC
 from stable_baselines3.common.utils import polyak_update
 from utils.memory import ExperienceMemory, PrioritizedMemory
@@ -28,9 +27,10 @@ class SAC_PM(SAC):
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
-            replay_data, indices = self.replay_buffer.sample(
+            replay_data, weights = self.replay_buffer.sample(
                 batch_size, env=self._vec_normalize_env
-            )  # type: ignore[union-attr]
+            )
+            weights = th.from_numpy(weights).to(self.device)
 
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
@@ -84,19 +84,21 @@ class SAC_PM(SAC):
             # using action from the replay buffer
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
+            # TD-error update in PER
             with th.no_grad():
                 td_error = np.zeros(target_q_values.shape[0])
-                # print(current_q_values)
                 for q in current_q_values:
                     td_error += th.abs(q - target_q_values).cpu().numpy().flatten() / len(
                         current_q_values
                     )
-            self.replay_buffer.update_priorities(indices, td_error)
+            self.replay_buffer.update_priorities(td_error.clip(1, 20))
 
             # Compute critic loss
-            critic_loss = 0.5 * sum(
-                F.mse_loss(current_q, target_q_values) for current_q in current_q_values
-            )
+            critic_loss = 0
+            for current_q in current_q_values:
+                critic_loss += (
+                    0.5 * ((current_q - target_q_values).pow(2) * weights).mean()
+                )
             assert isinstance(critic_loss, th.Tensor)  # for type checker
             critic_losses.append(critic_loss.item())  # type: ignore[union-attr]
 
@@ -110,7 +112,7 @@ class SAC_PM(SAC):
             # Min over all critic networks
             q_values_pi = th.cat(self.critic(replay_data.observations, actions_pi), dim=1)
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
-            actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+            actor_loss = ((ent_coef * log_prob - min_qf_pi) * weights).mean()
             actor_losses.append(actor_loss.item())
 
             # Optimize the actor
@@ -154,11 +156,7 @@ def get_SAC_agent(env, config):
         **kwargs,
     )
     if config.model.noise == "pink":
-        agent.actor.action_dist = PinkNoiseDist(
-            env.max_timesteps, env.action_space.shape[0]
-        )
+        agent.actor.action_dist = PinkNoiseDist(250, env.action_space.shape[0])
     elif config.model.noise == "brown":
-        agent.actor.action_dist = BrownNoiseDist(
-            env.max_timesteps, env.action_space.shape[0]
-        )
+        agent.actor.action_dist = BrownNoiseDist(250, env.action_space.shape[0])
     return agent

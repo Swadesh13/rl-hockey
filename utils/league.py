@@ -1,16 +1,9 @@
+from typing import List
 import os
 from glob import glob
-from typing import List
-
 import numpy as np
-
 from henv.env import BasicOpponent, HockeyEnv_SB3
-from utils.parsing import (
-    get_default_ppo_config,
-    get_default_sac_config,
-    get_default_td3_config,
-    save_config,
-)
+from utils.parsing import save_config
 
 
 class LeagueHockeyEnv(HockeyEnv_SB3):
@@ -54,11 +47,13 @@ class League:
         self.current_agent = agent
         self.opponents = opponents
         if not self.opponents:
-            self.opponents.append(BasicOpponent(weak=False))
+            self.opponents.append(
+                {"name": "basic_opponent_strong", "model": BasicOpponent(weak=False)}
+            )
         # 0 - loss, 1 - draw, 2 - win
         with open(f"{self.save_dir}/init_opp.txt", "w") as f:
             for opp in self.opponents:
-                f.write(f"{opp}\n")
+                f.write(f"{opp['name']}\n")
 
         self.scores = [0] * len(self.opponents)
 
@@ -115,11 +110,16 @@ class League:
 
         for i in range(1, rounds + 1):
             opponent = self.sample_opponent()
-            print(f"\nROUND {i}: Opponent sampled:", opponent)
-            self.env.set_opponent(opponent)
-            self.current_agent.train(**train_kwargs)
+            print(f"\nROUND {i}: Opponent sampled:", opponent["name"])
+            self.env.set_opponent(opponent["model"])
+            self.current_agent.train(
+                tb_log_name=type(self.current_agent).__name__
+                + f"_{i}_"
+                + opponent["name"],
+                **train_kwargs,
+            )
             for _ in range(eval_rounds):
-                self.eval_agent(opponent)
+                self.eval_agent(opponent["model"])
             if update_opp_every_rounds and i % update_opp_every_rounds == 0:
                 save_path = os.path.join(self.save_dir, f"model_{i}")
                 self.current_agent.save(save_path)
@@ -128,19 +128,22 @@ class League:
                 cfg = self.current_agent.config
                 new_opp = type(self.current_agent)(env, cfg)
                 new_opp.load(save_path)
-                self.opponents.append(new_opp)
+                self.opponents.append({"name": f"model_epoch_{i}", "model": new_opp})
                 self.scores.append(0)
             if show_score_rounds and i % show_score_rounds == 0:
                 print(f"Score after {i} rounds")
-                print(*list(zip(self.opponents, self.scores)), sep="\n")
+                print(
+                    *list(zip([opp["name"] for opp in self.opponents], self.scores)),
+                    sep="\n",
+                )
         print("Ending League...")
 
         with open(f"{self.save_dir}/final_opp.txt", "w") as f:
             for opp, sc in zip(self.opponents, self.scores):
-                f.write(f"{opp} - {sc}\n")
+                f.write(f"{opp['name']} - {sc}\n")
 
 
-def load_saved_models(sac=False, td3=False, ppo=False, env=None, cfg=[]):
+def load_saved_models(sac=False, td7=False, ppo=False, env=None, cfg=[]):
     """
     Load saved models for inference / training other models
     sac/td3/ppo : bool, whether to load models
@@ -158,39 +161,33 @@ def load_saved_models(sac=False, td3=False, ppo=False, env=None, cfg=[]):
         for p in paths:
             m = model_class(env, cfg)
             m.load(p[:-4])
-            yield m
+            yield m, os.path.basename(p)[:-4]
 
     if sac:
+        from utils.parsing import get_default_sac_config
         from sac.sac import SAC_HockeyAgent
 
-        models.extend(
-            list(
-                _load(
-                    env,
-                    cfg[0] if cfg else get_default_sac_config(),
-                    "models/sac/*.zip",
-                    SAC_HockeyAgent,
-                )
+        for m, n in list(
+            _load(
+                env,
+                cfg[0] if cfg else get_default_sac_config(),
+                "models/sac/*.zip",
+                SAC_HockeyAgent,
             )
-        )
-    # if td3:
-    #     from td3.td3_hockey import TD3_HockeyAgent
+        ):
+            models.append({"name": n, "model": m})
 
-    #     models.extend(
-    #         list(
-    #             _load(
-    #                 env,
-    #                 cfg[1] if len(cfg) == 2 else get_default_td3_config(),
-    #                 "models/td3/*.zip",
-    #                 TD3_HockeyAgent,
-    #             )
-    #         )
-    #     )
+    if td7:
+        from utils.load import LoadTD7Agents
+
+        for n, m in LoadTD7Agents(env).items():
+            models.append({"name": n, "model": m})
+
     if ppo:
         from ppo.load_ppo_models import load_all_ppo_agents
 
-        ms = load_all_ppo_agents()
-        models.extend(ms.values())
+        for n, m in load_all_ppo_agents().items():
+            models.append({"name": n, "model": m})
 
     return models
 

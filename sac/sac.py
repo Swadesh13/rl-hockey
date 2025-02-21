@@ -41,13 +41,15 @@ if __name__ == "__main__":
 
     from henv.env import HockeyEnv_SB3
 
-    env = HockeyEnv_SB3.make_vec_env(
-        cfg.environment.n_envs,
+    env = HockeyEnv_SB3(
         False,
         cfg.environment.additional_rewards,
         cfg.environment.reward_multiplier,
     )
 
+    # for noise in ["brown", "pink", None]:
+    #     cfg.model.noise = noise
+    print(cfg)
     agent = SAC_HockeyAgent(env, cfg)
 
     if args.train:

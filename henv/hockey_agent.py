@@ -31,6 +31,7 @@ class HockeyAgent:
         log_interval: int = None,
         progress_bar: bool = False,
         callbacks: list = None,
+        tb_log_name: str = None,
     ):
         """
         Trains the PPO model.
@@ -40,6 +41,7 @@ class HockeyAgent:
         - log_interval: Log interval for training progress.
         - progress_bar: Whether to display a progress bar during training.
         - callbacks: List of callbacks to use during training.
+        - tb_log_name: str, tensorboard logger name
         """
         if not self.model:
             raise ValueError("Model not loaded!")
@@ -55,6 +57,7 @@ class HockeyAgent:
             log_interval=li,
             progress_bar=progress_bar,
             callback=callback_list,
+            tb_log_name=tb_log_name,
         )
 
         if self.config.logging.verbose:
