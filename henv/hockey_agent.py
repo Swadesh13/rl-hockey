@@ -54,14 +54,21 @@ class HockeyAgent:
 
         if self.config.logging.verbose:
             print("Starting training...")
-
-        self.model.learn(
-            total_timesteps=tt,
-            log_interval=li,
-            progress_bar=progress_bar,
-            callback=callback_list,
-            tb_log_name=tb_log_name,
-        )
+        if tb_log_name:
+            self.model.learn(
+                total_timesteps=tt,
+                log_interval=li,
+                progress_bar=progress_bar,
+                callback=callback_list,
+                tb_log_name=tb_log_name,
+            )
+        else:
+            self.model.learn(
+                total_timesteps=tt,
+                log_interval=li,
+                progress_bar=progress_bar,
+                callback=callback_list,
+            )
 
         if self.config.logging.verbose:
             print("Training complete.")
@@ -121,8 +128,9 @@ class HockeyAgent:
         """
         return self.model.predict(obs, deterministic=deterministic)
 
+
 class HockeyCompetetionAgent(Agent):
-    def __init__(self, agent : HockeyAgent) -> None:
+    def __init__(self, agent: HockeyAgent) -> None:
         super().__init__()
 
         self.hockey_agent = agent
@@ -136,7 +144,7 @@ class HockeyCompetetionAgent(Agent):
         # continuous_action = env.discrete_to_continous_action(discrete_action)
         obs = np.array(observation, dtype=np.float32)  # Ensure correct dtype
         action, _ = self.hockey_agent.predict(obs, deterministic=True)
-        return [float(a) for a in action] 
+        return [float(a) for a in action]
 
     def on_start_game(self, game_id) -> None:
         game_id = uuid.UUID(int=int.from_bytes(game_id))
