@@ -60,6 +60,14 @@ def load_all_sac_agents():
     sac_pink = SAC_HockeyAgent(eval_env, config=cfg)
     sac_pink.load("models/sac/sac_pink")
     models["sac_pink"] = sac_pink
+    
+    sac_brown = SAC_HockeyAgent(eval_env, config=cfg)
+    sac_brown.load("models/sac/sac_brown")
+    models["sac_brown"] = sac_brown
+    
+    sac_reward = SAC_HockeyAgent(eval_env, config=cfg)
+    sac_reward.load("models/sac/sac_reward")
+    models["sac_reward"] = sac_reward
 
     return models
 
@@ -151,16 +159,16 @@ def eval_against_all_models(
 
     # Background shading for Win Rate (green above 0.5, red below 0.5)
     ax1[1].axhspan(0.5, 1, facecolor="green", alpha=0.15)
-    ax1[1].axhspan(0, 0.5, facecolor="red", alpha=0.15)
-
-    # Get total win rate sum
+    ax1[1].axhspan(0, 0.5, facecolor="red", alpha=0.15)    
+    
+    # Plot Win Rate as a bar chart
+    bars = ax1[1].bar(x_positions, df["Win Rate"], color="orange", label="Win Rate")
+    
     total=0
     for bar in bars:
         height = bar.get_height()
         total += height
     
-    # Plot Win Rate as a bar chart
-    bars = ax1[1].bar(x_positions, df["Win Rate"], color="orange", label="Win Rate")
     ax1[1].set_title(f"Win Rate {total}")
     ax1[1].set_ylabel("Win Rate")
     ax1[1].set_xticks(x_positions)

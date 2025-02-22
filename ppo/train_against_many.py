@@ -33,11 +33,13 @@ def train_against_many(
     timesteps_per_iter=50_000,
     load=None,
     eval_episodes=50,
+    tensorboard_log=None,
 ):
     # Parse standard configuration and any additional command-line args
     args = parse_args()
     cfg = get_config_from_args(args, cfgnode=True)
-    cfg.logging.tensorboard = "./ppo/logs/allNL/"
+    if tensorboard_log is not None:
+        cfg.logging.tensorboard = tensorboard_log
 
     if not args.quiet:
         print_config(cfg)
@@ -147,7 +149,7 @@ def train_against_many(
             print(
                 f"Saved model after round {rnd + 1} with opponent {opp_name} at {save_path}"
             )
-            if rnd in [200,400,600,800,1000,1200,1400,1600,1800]:
+            if rnd in list(range(200, num_iters, 200)):
                 eval_against_all_models(
                     agent,
                     opponent_dict,
@@ -179,6 +181,9 @@ if __name__ == "__main__":
     opponent_dict.update(load_all_sac_agents())
     opponent_dict.update(load_all_ppo_agents())
     opponent_dict.update(LoadTD7Agents())
+    
+    opponent_dict.pop("ppo_pp+op")
+    opponent_dict.pop("ppo_vanilla")
 
     train_against_many(
         opponent_dict,
@@ -186,5 +191,6 @@ if __name__ == "__main__":
         num_iters=4000,
         timesteps_per_iter=50_000,
         load="no",
-        eval_episodes=50
+        eval_episodes=50,
+        tensorboard_log="./ppo/logs/allNL_RND/",
     )
