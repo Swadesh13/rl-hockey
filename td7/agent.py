@@ -1,10 +1,9 @@
 from henv.hockey_agent import HockeyAgent
 from henv.env import HockeyEnv_SB3
 from fvcore.common.config import CfgNode
-import gym.vector
+import gymnasium as gym
 import numpy as np
 import time
-import csv
 from .model import TD7
 import os
 import json
@@ -36,7 +35,7 @@ class TD7HockyAgent(HockeyAgent):
                         config_dict = json.load(f)
                     self.config = CfgNode(config_dict)
                 else:
-                    conifg = get_default_td7_config()
+                    config = get_default_td7_config()
                     self.config = config
             else:
                 self.config = config

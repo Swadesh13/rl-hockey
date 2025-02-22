@@ -42,9 +42,21 @@ def CreateHockyEnvAllVector() -> gym.vector.AsyncVectorEnv:
     td7Agents = LoadTD7Agents()
     ppoAgents = LoadAllPPOAgents()
     sacAgents = LoadAllSacAgents()
-    agentList= list(sacAgents.values())
+    agentList = []
     agentList.append(BasicOpponent(weak=False))
     agentList.append(BasicOpponent(weak=True))
+    agentList.append(td7Agents["td7_all"])
+    agentList.append(td7Agents["td7_plain"])
+    agentList.append(td7Agents["td7_offensive_pressure_self"])
+    agentList.append(td7Agents["td7_offensive_pressure"])
+    agentList.append(sacAgents["sac_reward"])
+    agentList.append(sacAgents["sac_vanilla"])
+    agentList.append(sacAgents["sac_pink"])
+    agentList.append(sacAgents["sac_brown"])
+    agentList.append(ppoAgents["ppo_pp+op"])
+    agentList.append(ppoAgents["ppo_offensive_pressure"])
+    agentList.append(ppoAgents["ppo_vanilla"])
+    agentList.append(ppoAgents["ppo_rnd_e1_i0.01"])
 
     envs = gym.vector.AsyncVectorEnv(
         [_CreateHoeckyAgentWrapper(agent=agent) for agent in agentList]

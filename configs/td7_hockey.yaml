@@ -32,7 +32,7 @@ model:
   name: "td7"
   models_dir: "models/"
   load: true 
-  model_load_name: td7_all
+  model_load_name: td7_all_big
   hyperparameters:
     exploration_noise: 
       type : "normal"
@@ -43,9 +43,9 @@ model:
     batch_size: 4096  
     discount: 0.99
     target_update_rate: 125
-    target_policy_noise: 0.2
+    target_policy_noise: 0.25
     policy_freq: 2
-    noise_clip: 0.2
+    noise_clip: 0.3
     learning_rate: 0.0004
     zs_dim: 256
     h_dim: 256
@@ -58,7 +58,7 @@ model:
     min_priority: 1
 
 training:
-  total_timesteps: 125_000
+  total_timesteps: 250_000
   save_model_every: 10_000
   eval_starts: 10_000
   eval_every: 10_000
@@ -68,9 +68,9 @@ training:
 
 evaluation:
   mode: "team"
-  weak: false
-  algo: "sac"
-  type: "sac_reward"
+  weak: true
+  algo: "td7"
+  type: "td7_offensive_pressure"
   ep_num: 10
   render_mode: "human"
 
