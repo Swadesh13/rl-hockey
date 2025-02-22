@@ -25,6 +25,15 @@ from utils.parsing import (
     print_config,
 )
 
+ALL_MODELS = {
+    "basic_strong": BasicOpponent(weak=False),
+    "basic_weak": BasicOpponent(weak=True),
+}
+ALL_MODELS.update(load_all_sac_agents())
+ALL_MODELS.update(LoadTD7Agents())
+ALL_MODELS.update(load_all_ppo_agents())
+
+
 
 def train_against_many(
     opponent_dict,
@@ -101,7 +110,7 @@ def train_against_many(
 
     eval_against_all_models(
         agent,
-        opponent_dict,
+        ALL_MODELS,
         get_eval_env(),
         agent_name=args.config,
         num_episodes=eval_episodes,
@@ -122,10 +131,20 @@ def train_against_many(
                 )
                 save_path = os.path.join(
                     agent.save_dir,
+                    "chkpts",
                     f"model_after_{opp_name}_cycle_{cycle + 1}",
                 )
                 agent.model.save(save_path)
                 print(f"Saved model after training against {opp_name} at {save_path}")
+                
+            eval_against_all_models(
+                agent,
+                ALL_MODELS,
+                get_eval_env(),
+                agent_name=args.config,
+                num_episodes=eval_episodes,
+                save_path=os.path.join(agent.save_dir, f"eval_round_{cycle}.png"),
+            )
 
     # Option 2: Random sampling training: each round picks a random opponent.
     elif training_mode.lower() == "random":
@@ -164,7 +183,7 @@ def train_against_many(
 
     eval_against_all_models(
         agent,
-        opponent_dict,
+        ALL_MODELS,
         get_eval_env(),
         agent_name=args.config,
         num_episodes=eval_episodes,
@@ -174,23 +193,38 @@ def train_against_many(
 
 if __name__ == "__main__":
     opponent_dict = {
-        "basic_strong": BasicOpponent(weak=False),
-        "basic_weak": BasicOpponent(weak=True),
-        # "ppo_vanilla": load_ppo_agent("models/ppo/ppo_vanilla.yaml"),
+        # "basic_strong": BasicOpponent(weak=False),
+        # "basic_weak": BasicOpponent(weak=True),
     }
     opponent_dict.update(load_all_sac_agents())
-    opponent_dict.update(load_all_ppo_agents())
+    opponent_dict.pop("sac_brown", None)
+    # opponent_dict.pop("sac_pink", None)
+    opponent_dict.pop("sac_reward", None)
+    # opponent_dict.pop("sac_vanilla", None)
+
     opponent_dict.update(LoadTD7Agents())
-    
-    opponent_dict.pop("ppo_pp+op")
-    opponent_dict.pop("ppo_vanilla")
+    opponent_dict.pop("td7_all", None)
+    opponent_dict.pop("td7_offensive_pressure", None)
+    opponent_dict.pop("td7_offensive_pressure_puck_proximity", None)
+    # opponent_dict.pop("td7_offensive_pressure_self", None)
+    # opponent_dict.pop("td7_plain", None)
+    opponent_dict.pop("td7_puck_proximity", None)
+
+    # opponent_dict.update(load_all_ppo_agents())
+    # opponent_dict.pop("ppo_gaussian_noise", None)
+    # opponent_dict.pop("ppo_offensive_pressure", None)
+    # opponent_dict.pop("ppo_pp+op", None)
+    # opponent_dict.pop("ppo_puck_proximity", None)
+    # opponent_dict.pop("ppo_rnd_e1_i0.01", None)
+    # opponent_dict.pop("ppo_vanilla", None)
+    ALL_MODELS = opponent_dict
 
     train_against_many(
         opponent_dict,
-        training_mode="random",
-        num_iters=4000,
-        timesteps_per_iter=50_000,
-        load="no",
+        training_mode="stable",
+        num_iters=1000,
+        timesteps_per_iter=250_000,
+        load="yes",
         eval_episodes=50,
-        tensorboard_log="./ppo/logs/allNL_RND/",
+        tensorboard_log="./ppo/logs/op_sac_td7/",
     )
