@@ -9,7 +9,8 @@ from comprl.client import Agent, launch_client
 
 from ppo.load_ppo_models import load_ppo_agent
 from ppo.ppo import PPO_HockeyAgent
-
+from utils.load import LoadTD7Agents
+from henv.hockey_agent import HockeyCompetetionAgent
 
 class RandomAgent(Agent):
     """A hockey agent that simply uses random actions."""
@@ -110,6 +111,8 @@ def initialize_agent(agent_args: list[str]) -> Agent:
         agent = RandomAgent()
     elif args.agent == "ppo":
         agent = PPO_Player()
+    elif args.agent == "td7":
+        agent = HockeyCompetetionAgent(LoadTD7Agents()["td7_plain"])
     else:
         raise ValueError(f"Unknown agent: {args.agent}")
 

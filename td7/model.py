@@ -1,15 +1,12 @@
 import os
-import json
 import torch
 import gymnasium as gym
-from .internal import Actor, Critic, Encoder, AvgL1Norm, LapHuber
-from .initilizer import CreateExplorationNoise
+from .internal import Actor, Critic, Encoder, LapHuber
 from .replay_buffer import PER
 from fvcore.common.config import CfgNode
-from typing import Callable
+from typing import Callable,List,Union
 import copy
 from datetime import datetime
-import csv
 
 class TD7:
     def __init__(self, 
@@ -25,7 +22,7 @@ class TD7:
         self.activeFunc: Callable[[torch.Tensor], torch.Tensor] = torch.relu
 
         self.device: torch.device = torch.device(self.hyperparameters.device)
-        self.noise: Callable[[torch.Tensor], torch.Tensor] = CreateExplorationNoise(self.hyperparameters.exploration_noise)
+        self.noise: Callable[[torch.Tensor], torch.Tensor] = self.createExplorationNoise()
 
         self.modelSaveDir : str = os.path.join(self.config.models_dir, self.config.name, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         self.trainingSteps : int = 0
@@ -270,3 +267,20 @@ class TD7:
                                hDim= hDim, activ = activ).to(self.device)
         self.criticOptimizer = torch.optim.Adam(self.critic.parameters(), lr=lr)
         self.criticTarget = copy.deepcopy(self.critic)
+
+    def createExplorationNoise(self) -> Callable[[Union[torch.Tensor, List[torch.Tensor]]], Union[torch.Tensor, List[torch.Tensor]]]:
+        config = self.hyperparameters.exploration_noise
+        if config.type == "normal":
+            return lambda Action: (
+                [torch.randn_like(A) * config.magnitude for A in Action]
+                if isinstance(Action, list) else torch.randn_like(Action) * config.magnitude
+            )
+
+        elif config.type == "uniform":
+            return lambda Action: (
+                [(torch.rand_like(A) * 2 - 1) * config.magnitude for A in Action]
+                if isinstance(Action, list) else (torch.rand_like(Action) * 2 - 1) * config.magnitude
+            )
+
+        else:
+            raise ValueError(f"Invalid exploration noise type: {config.type}")

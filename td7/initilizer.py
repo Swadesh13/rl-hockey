@@ -1,44 +1,94 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from typing import List, Callable, Union
-from fvcore.common.config import CfgNode
+from typing import List, Callable
 import gymnasium as gym
 from henv.env import HockeyEnv_SB3
+from henv.hockey_agent import HockeyAgent
+from utils.load import LoadTD7Agents,LoadAllPPOAgents,LoadAllSacAgents
+from gymnasium.wrappers import TimeLimit
+from henv.env import BasicOpponent
+import os
+from glob import glob
 
-def CreateExplorationNoise(config: CfgNode) -> Callable[[Union[torch.Tensor, List[torch.Tensor]]], Union[torch.Tensor, List[torch.Tensor]]]:
-    if config.type == "normal":
-        return lambda Action: (
-            [torch.randn_like(A) * config.magnitude for A in Action]
-            if isinstance(Action, list) else torch.randn_like(Action) * config.magnitude
-        )
-
-    elif config.type == "uniform":
-        return lambda Action: (
-            [(torch.rand_like(A) * 2 - 1) * config.magnitude for A in Action]
-            if isinstance(Action, list) else (torch.rand_like(Action) * 2 - 1) * config.magnitude
-        )
-
-    else:
-        raise ValueError(f"Invalid exploration noise type: {config.type}")
-
-
-def CreateHoeckyEnvs(conf : CfgNode) -> gym.vector.AsyncVectorEnv:
+def CreateHockyEnvVector(envNum : int = 16,seed : int = 42, weakOpponent : bool = False, addtionalRewards: List[str] = None) -> gym.vector.AsyncVectorEnv:
     envs = gym.vector.AsyncVectorEnv(
-        [_CreateHockyEnvWrapper(conf, i) for i in range(conf.n_envs)]
+        [_CreateHockyEnvWrapper(seed=seed+i,weakOpponent=weakOpponent,addtionalRewards=addtionalRewards) for i in range(envNum)]
     )
     return envs
     
-def CreateHoeckyEnv(conf : CfgNode, seedExtra : int = 0) -> HockeyEnv_SB3:
+
+def _CreateHockyEnvWrapper(seed : int = 42, weakOpponent : bool = False, addtionalRewards: List[str] = None) -> Callable:
+    def _init():
+        return CreateHockyEnv(seed=seed,weakOpponent=weakOpponent,addtionalRewards=addtionalRewards) 
+    return _init
+
+def CreateHockyEnv(seed : int = 42, weakOpponent : bool = False, addtionalRewards: List[str] = None) -> HockeyEnv_SB3:
     env = HockeyEnv_SB3(
-        weak_opponent = conf.weak_opponent,
-        additional_rewards = conf.additional_rewards,
-        reward_multiplier = conf.reward_multiplier
+        weak_opponent = weakOpponent,
+        additional_rewards = addtionalRewards,
     )
-    env.seed(conf.seed + seedExtra)
+    env.seed(seed)
     return env
 
-def _CreateHockyEnvWrapper(conf : CfgNode, seedExtra : int = 0) -> Callable:
+
+def CreateHockyEnvSelfVector() -> gym.vector.AsyncVectorEnv:
+    agentList = list(LoadTD7Agents().values())
+    envs = gym.vector.AsyncVectorEnv(
+        [_CreateHoeckyAgentWrapper(agent=agent) for agent in agentList]
+    )
+    
+    return envs
+
+
+def CreateHockyEnvAllVector() -> gym.vector.AsyncVectorEnv:
+    td7Agents = LoadTD7Agents()
+    ppoAgents = LoadAllPPOAgents()
+    sacAgents = LoadAllSacAgents()
+    agentList= list(sacAgents.values())
+    agentList.append(BasicOpponent(weak=False))
+    agentList.append(BasicOpponent(weak=True))
+
+    envs = gym.vector.AsyncVectorEnv(
+        [_CreateHoeckyAgentWrapper(agent=agent) for agent in agentList]
+    )
+    
+    return envs
+
+def _CreateHoeckyAgentWrapper(agent) -> Callable:
     def _init():
-        return CreateHoeckyEnv(conf, seedExtra) 
+        env = HockeyEnv_SB3()
+        env.opponent = agent
+        return env
     return _init
+
+def CreatePendulumV1Env() -> gym.Env:
+    env = gym.make("Pendulum-v1")
+    env = TimeLimit(env, max_episode_steps=500) 
+    return env
+
+def CreatePendulumV1EnvVector(envNum : int = 16) -> gym.vector.AsyncVectorEnv:
+    envs = gym.vector.AsyncVectorEnv(
+        [_CreatePendulumV1EnvWrapper() for _ in range(envNum)]
+    )
+    return envs
+
+def _CreatePendulumV1EnvWrapper() -> Callable:
+    def _init():
+        return CreatePendulumV1Env() 
+    return _init
+
+def CreateHockyAgentFromTeam(algo : str = "td7", name : str = "td7_offensive_pressure") -> HockeyAgent:
+    if algo == "ppo":
+        return LoadAllPPOAgents()[name]
+    
+    if algo == "td7":
+        return LoadTD7Agents()[name]
+    
+    if algo == "sac":
+        return LoadAllSacAgents()[name]
+    
+    raise ValueError(f"Invalid algo: {algo}")
+    
+
+def CreateHockyEnvFromOpponent(opponent : HockeyAgent) -> HockeyEnv_SB3:
+    env = HockeyEnv_SB3()
+    env.opponent = opponent
+    return env

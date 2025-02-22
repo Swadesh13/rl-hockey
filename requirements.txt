@@ -10,3 +10,4 @@ torch
 tqdm
 rich
 fvcore
+comprl @ git+https://github.com/martius-lab/teamproject-competition-server.git#egg=comprl&subdirectory=comprl

@@ -1,7 +1,7 @@
 from henv.hockey_agent import HockeyAgent
 from henv.env import HockeyEnv_SB3
 from fvcore.common.config import CfgNode
-import gymnasium.vector
+import gym.vector
 import numpy as np
 import time
 import csv
@@ -9,33 +9,49 @@ from .model import TD7
 import os
 import json
 from datetime import datetime
+from utils.evaluate import eval_agent
+from torch.utils.tensorboard import SummaryWriter
+from utils.parsing import get_default_td7_config
 
-class TD7Agent(HockeyAgent):
-    def __init__(self,config : CfgNode, model : TD7, trainEnv : gymnasium.vector.AsyncVectorEnv ,evalEnv : HockeyEnv_SB3, save : bool = True ,loadModel : bool = False, modelsDir : str = None ,modelName : str = None):
+
+class TD7HockyAgent(HockeyAgent):
+    def __init__(self,config : CfgNode = None, model : TD7 = None , trainEnv : gym.vector.AsyncVectorEnv = None ,evalEnv : HockeyEnv_SB3 = None, loadModel : bool = None, modelsDir : str = None ,modelName : str = None):
         if not loadModel:
-            super().__init__(HockeyEnv_SB3(), config)
             self.config = config
             self.model = model
             self.trainEnv = trainEnv
             self.evalEnv = evalEnv
-            self.saveDir = os.path.join(self.config.agent.save_dir, config.model.name,datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-            if save:
+            self.saveDir = os.path.join(self.config.agent.save_dir, config.model.name,f"{self.config.train_env.env_name}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}")
+            self.writer = SummaryWriter(log_dir=self.saveDir)
+            if self.config.agent.save:
                 os.makedirs(self.saveDir, exist_ok=True)
                 with open(os.path.join(self.saveDir, "config.json"), "w") as f:
                     json.dump(self.config, f, indent=4)
         else:
-            modelPath = os.path.join(modelsDir,"td7",modelName)
-            print(modelPath)
-            configPath = os.path.join(modelPath, "config.json")
-            with open(configPath, "r") as f:
-                config_dict = json.load(f)
-            self.config = CfgNode(config_dict)
-            print(self.config)
-            super().__init__(HockeyEnv_SB3(), self.config) 
+            self.modelPath = os.path.join(modelsDir,"td7",modelName)
+            if not config:
+                configPath = os.path.join(self.modelPath, "config.json")
+                if os.path.exists(configPath):
+                    with open(configPath, "r") as f:
+                        config_dict = json.load(f)
+                    self.config = CfgNode(config_dict)
+                else:
+                    conifg = get_default_td7_config()
+                    self.config = config
+            else:
+                self.config = config
+            if self.config.agent.save:
+                self.saveDir = os.path.join(modelsDir,"td7",f"{modelName}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}")
+                self.writer = SummaryWriter(log_dir=self.saveDir)
+            else:
+                self.writer = None
             self.evalEnv = evalEnv or HockeyEnv_SB3()
-            self.load(path=modelPath)
+            self.trainEnv = trainEnv
+            self.load(path=self.modelPath)
 
-    def train(self, *args, **kwargs):
+    def train(
+        self, *args, **kwargs
+    ):
         trainingConf = self.config.training
         numEnvs = self.trainEnv.num_envs
         useCheckpoint = self.config.model.hyperparameters.use_checkpoint
@@ -45,16 +61,6 @@ class TD7Agent(HockeyAgent):
         learningStarts = self.config.model.hyperparameters.learning_starts
         epTotalRewards = np.zeros(numEnvs, dtype=np.float64)
         epTimeSteps = np.zeros(numEnvs, dtype=np.int32)
-        self.training_timesteps = [] 
-        encoderLoss = []
-        criticLoss = [] 
-        actorLoss = []
-        avgStepReward = []
-        path = os.path.join(self.saveDir, "train_stat.csv")
-        trainStatFile = open(path, "a")
-        writer = csv.writer(trainStatFile)
-        writer.writerow(["reward", "encoder_loss", "critic_loss", "actor_loss"])
-
 
         startTime = time.time()
         print("Starting training...")
@@ -76,10 +82,12 @@ class TD7Agent(HockeyAgent):
 
             if totalTimesteps >= learningStarts and not useCheckpoint:
                 losses = self.model.train()
-                encoderLoss.append(losses["encoder_loss"])
-                criticLoss.append(losses["critic_loss"])
-                actorLoss.append(losses["actor_loss"])
-                avgStepReward.append(np.mean(rewards))
+
+                if self.writer is not None:
+                    self.writer.add_scalar("Loss/Encoder", losses["encoder_loss"] or 0, totalTimesteps)
+                    self.writer.add_scalar("Loss/Critic", losses["critic_loss"] or 0, totalTimesteps)
+                    self.writer.add_scalar("Loss/Actor", losses["actor_loss"] or 0, totalTimesteps)
+                    self.writer.add_scalar("Reward/Average Step Reward", np.mean(rewards), totalTimesteps)
 
             if totalTimesteps % trainingConf.save_model_every == 0:
                 self.save()
@@ -105,22 +113,9 @@ class TD7Agent(HockeyAgent):
                 epTimeSteps[doneIndices] = 0
                 episodeNum += np.sum(dones)
 
-            if totalTimesteps % trainingConf.log_interval == 0 and len(criticLoss) > 0:
-                rows = zip(
-                    avgStepReward, 
-                    encoderLoss, 
-                    criticLoss, 
-                    actorLoss
-                )
-                writer.writerows(rows)  
-                trainStatFile.flush()  
-                encoderLoss.clear()
-                criticLoss.clear() 
-                actorLoss.clear()
-                avgStepReward.clear()
-
-        trainStatFile.close()
         self.evalMidTrain(timeStep=totalTimesteps, episode=episodeNum, evalEpisodeNum=trainingConf.eval_episode_num)
+        if self.writer is not None:
+            self.writer.close()
         print("Training complete")
         print(f"Training took {time.time() - startTime} seconds")
 
@@ -133,7 +128,7 @@ class TD7Agent(HockeyAgent):
             actionSpace = self.evalEnv.action_space,
             obsSpace = self.evalEnv.observation_space
         )
-        dir = path or os.path.join(self.config.agent.save_dir, self.config.model.name,self.config.evaluation.model_name)
+        dir = path or os.path.join(self.config.agent.save_dir, self.config.model.name,self.config.model.model_load_name)
         self.model.loadModel(dir=dir)  
 
     def evalMidTrain(self, timeStep : int, episode : int, evalEpisodeNum : int):
@@ -154,27 +149,156 @@ class TD7Agent(HockeyAgent):
         avgReward = np.mean(totalRewards)
         stdReward = np.std(totalRewards)
 
-        path = os.path.join(self.saveDir, "mid_train_evaluations.csv")
-        fileExists = os.path.exists(path)
-        with open(path, mode="a") as f:
-            writer = csv.writer(f)
-            if not fileExists:
-                writer.writerow(["Time Step", "Average Reward", "Reward Std"])
-            writer.writerow([timeStep, avgReward, stdReward])
+        if self.writer is not None:
+            self.writer.add_scalar("Evaluation/Average Reward", avgReward, timeStep)
+            self.writer.add_scalar("Evaluation/Reward Std Dev", stdReward, timeStep)
         
         print(f"Average total reward over {evalEpisodeNum} AVG episodes: {avgReward} STD: {stdReward}")
         print("--------------------------------------------")
 
-
     def evaluate(self, num_episodes = None, render_mode = None, opponent_right = None, modes = None, env = None):
         evalConf = self.config.evaluation
-        from utils.evaluate import eval_agent
-        return eval_agent(
-            self,
-            num_episodes=evalConf.ep_num,
-            render_mode=evalConf.render_mode,
+        res =  eval_agent(player_left= self, num_episodes=evalConf.ep_num, render_mode=evalConf.render_mode, opponent_right= opponent_right,
         )
+        if self.config.agent.save:
+            path = os.path.join(self.modelPath, "evaluation.txt")
+            with open(path, mode="a") as f:
+                f.write(str(res) + "\n")
+        return res
 
     def predict(self, obs, deterministic=True):
         action =  self.model.selectAction(obs[np.newaxis, :], useExploration=not deterministic)[0]
         return action, None
+    
+    def act(self, obs, deterministic=True):
+        action, _ =  self.predict(obs, deterministic=deterministic)
+        return action
+    
+
+class TD7PendulumAgent(TD7HockyAgent):
+    def __init__(self, config, model, trainEnv, evalEnv, loadModel = False, modelsDir = None, modelName = None):
+        super().__init__(config, model, trainEnv, evalEnv, loadModel, modelsDir, modelName)
+
+    def evaluate(self, num_episodes=None, render_mode=None, opponent_right=None, modes=None, env=None):
+        print(f" ---Evauation---")
+        evalConf = self.config.evaluation
+        totalRewards = []
+        for _ in range(evalConf.ep_num):
+            state, _ = self.evalEnv.reset()  
+            episodeReward = 0
+            truncrated = False
+            while not truncrated:
+                action = self.model.selectAction(state[np.newaxis, :], useExploration=False)[0]
+                next_state, reward, _, truncrated, _ = self.evalEnv.step(action)
+
+                episodeReward += reward
+                state = next_state
+                
+            totalRewards.append(episodeReward)
+        avgReward = np.mean(totalRewards)
+        stdReward = np.std(totalRewards)
+        print(f"Average total reward over {evalConf.ep_num} episodes: {avgReward} STD: {stdReward}")
+        print("--------------------------------------------")
+        if self.config.agent.save:
+            path = os.path.join(self.saveDir, "evaluation.txt")
+            with open(path, mode="a") as f:
+                f.write(f"AvgReward : {avgReward}, StdReward : {stdReward}" + "\n")
+        
+    def evalMidTrain(self, timeStep : int, episode : int, evalEpisodeNum : int):
+        print(f" ---Evaluation at Time step: {timeStep}, Episode: {episode} ---")
+        totalRewards = []
+        for _ in range(evalEpisodeNum):
+            state, _ = self.evalEnv.reset()  
+            episodeReward = 0
+            truncrated = False
+            while not truncrated:
+                action = self.model.selectAction(state[np.newaxis, :], useExploration=False)[0]
+                next_state, reward, _, truncrated, _ = self.evalEnv.step(action)
+
+                episodeReward += reward
+                state = next_state
+                
+            totalRewards.append(episodeReward)
+        avgReward = np.mean(totalRewards)
+        stdReward = np.std(totalRewards)
+        if self.writer is not None:
+            self.writer.add_scalar("Evaluation/Average Reward", avgReward, timeStep)
+            self.writer.add_scalar("Evaluation/Reward Std Dev", stdReward, timeStep)
+        print(f"Average total reward over {evalEpisodeNum} AVG episodes: {avgReward} STD: {stdReward}")
+        print("--------------------------------------------")
+
+
+    def train(
+        self,
+        total_timesteps: int = None,
+        log_interval: int = None,
+        progress_bar: bool = False,
+        callbacks : list = None,
+    ):
+        trainingConf = self.config.training
+        numEnvs = self.trainEnv.num_envs
+        useCheckpoint = self.config.model.hyperparameters.use_checkpoint
+        totalTimesteps = 0
+        states,_ = self.trainEnv.reset()
+        episodeNum = 0
+        learningStarts = self.config.model.hyperparameters.learning_starts
+        epTotalRewards = np.zeros(numEnvs, dtype=np.float64)
+        epTimeSteps = np.zeros(numEnvs, dtype=np.int32)
+
+
+        startTime = time.time()
+        print("Starting training...")
+
+        while totalTimesteps < trainingConf.total_timesteps:
+            if totalTimesteps % trainingConf.log_interval == 0:
+                print(f"Time step: {totalTimesteps}, Episode: {episodeNum}")
+
+
+            if totalTimesteps >= learningStarts:
+                actions = self.model.selectAction(states)
+            else:
+                actions = [self.trainEnv.single_action_space.sample() for _ in range(numEnvs)]
+
+
+            nextStates, rewards, dones, truncrated, _ = self.trainEnv.step(actions)
+
+            self.model.replayBuffer.add(states, actions, nextStates, rewards.reshape(-1,1), dones.reshape(-1,1))
+
+            if totalTimesteps >= learningStarts and not useCheckpoint:
+                losses = self.model.train()
+
+                if self.writer is not None:
+                    self.writer.add_scalar("Loss/Encoder", losses["encoder_loss"] or 0, totalTimesteps)
+                    self.writer.add_scalar("Loss/Critic", losses["critic_loss"] or 0, totalTimesteps)
+                    self.writer.add_scalar("Loss/Actor", losses["actor_loss"] or 0, totalTimesteps)
+                    self.writer.add_scalar("Reward/Average Step Reward", np.mean(rewards), totalTimesteps)
+        
+            if totalTimesteps % trainingConf.save_model_every == 0:
+                self.save()
+
+            if totalTimesteps >= trainingConf.eval_starts  and  totalTimesteps % trainingConf.eval_every == 0:
+                self.evalMidTrain(timeStep=totalTimesteps, episode=episodeNum, evalEpisodeNum=trainingConf.eval_episode_num)
+
+            states = nextStates
+            totalTimesteps+=1
+
+            epTotalRewards += rewards
+            epTimeSteps += 1
+
+            if np.any(truncrated):
+                doneIndices = np.where(truncrated)[0]
+                maxEpTotalRewardIdx = np.argmax(epTotalRewards[doneIndices])
+                maxEpTotalReward = epTotalRewards[maxEpTotalRewardIdx]
+                maxRewardTotalTimeStep = epTimeSteps[maxEpTotalRewardIdx]
+
+                if totalTimesteps >= learningStarts and useCheckpoint:
+                    self.model.maybeTrainAndCheckpoint(epTimesteps=maxRewardTotalTimeStep, epReturn=maxEpTotalReward)
+                epTotalRewards[doneIndices] = 0
+                epTimeSteps[doneIndices] = 0
+                episodeNum += np.sum(truncrated)
+
+        self.evalMidTrain(timeStep=totalTimesteps, episode=episodeNum, evalEpisodeNum=trainingConf.eval_episode_num)
+        if self.writer is not None:
+            self.writer.close()
+        print("Training complete")
+        print(f"Training took {time.time() - startTime} seconds")

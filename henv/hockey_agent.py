@@ -4,6 +4,9 @@ from fvcore.common.config import CfgNode
 from stable_baselines3.common.callbacks import CallbackList
 
 from henv.env import HockeyEnv_SB3
+from comprl.client import Agent
+import uuid
+import numpy as np
 
 
 class HockeyAgent:
@@ -117,3 +120,31 @@ class HockeyAgent:
         Predict action for a given function
         """
         return self.model.predict(obs, deterministic=deterministic)
+
+class HockeyCompetetionAgent(Agent):
+    def __init__(self, agent : HockeyAgent) -> None:
+        super().__init__()
+
+        self.hockey_agent = agent
+
+    def get_step(self, observation: list[float]) -> list[float]:
+        # NOTE: If your agent is using discrete actions (0-7), you can use
+        # HockeyEnv.discrete_to_continous_action to convert the action:
+        #
+        # from hockey.hockey_env import HockeyEnv
+        # env = HockeyEnv()
+        # continuous_action = env.discrete_to_continous_action(discrete_action)
+        obs = np.array(observation, dtype=np.float32)  # Ensure correct dtype
+        action, _ = self.hockey_agent.predict(obs, deterministic=True)
+        return [float(a) for a in action] 
+
+    def on_start_game(self, game_id) -> None:
+        game_id = uuid.UUID(int=int.from_bytes(game_id))
+        print(f"Game started (id: {game_id})")
+
+    def on_end_game(self, result: bool, stats: list[float]) -> None:
+        text_result = "won" if result else "lost"
+        print(
+            f"Game ended: {text_result} with my score: "
+            f"{stats[0]} against the opponent with score: {stats[1]}"
+        )

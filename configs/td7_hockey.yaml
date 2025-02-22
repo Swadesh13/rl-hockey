@@ -2,26 +2,37 @@ train_env:
   n_envs: 16
   seed: 42
   render_mode: None
+  mode: "all"
   env_name: "Hockey-v0"
   weak_opponent: false
-  additional_rewards: ["offensive_pressure", "puck_proximity"]
+  additional_rewards: []
+  reward_multiplier: 1.0
+
+environment:
+  n_envs: 16
+  seed: 42
+  render_mode: None
+  env_name: "Hockey-v0"
+  weak_opponent: false
+  additional_rewards: []
   reward_multiplier: 1.0
 
 eval_env:
   seed: 42
-  render_mode: "human"
   env_name: "Hockey-v0"
   weak_opponent: false
-  reward_multiplier: 1.0
   additional_rewards: []
 
 
 agent:
   save_dir: "models/"
+  save: false
 
 model:
   name: "td7"
   models_dir: "models/"
+  load: true 
+  model_load_name: td7_all
   hyperparameters:
     exploration_noise: 
       type : "normal"
@@ -56,9 +67,12 @@ training:
   log_interval: 1000
 
 evaluation:
-  model_name: td7_offensive_pressure
-  ep_num: 1_000
-  render_mode: "rgb_array"
+  mode: "team"
+  weak: false
+  algo: "sac"
+  type: "sac_reward"
+  ep_num: 10
+  render_mode: "human"
 
 rnd:
   enabled: false

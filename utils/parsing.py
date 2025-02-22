@@ -342,9 +342,9 @@ def get_default_ppo_config(cfgnode=True):
     return config
 
 
-def get_default_td3_config(cfgnode=True):
-    print("Loading default TD3 config 'configs/td3_hockey.yaml'")
-    config = load_config("configs/td3_hockey.yaml")
+def get_default_td7_config(cfgnode=True):
+    print("Loading default TD7 config 'configs/td3_hockey.yaml'")
+    config = load_config("configs/td7_hockey.yaml")
     if cfgnode:
         config = convert_to_cfgnode(config)
     return config
