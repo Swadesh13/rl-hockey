@@ -10,7 +10,7 @@ from ppo.load_ppo_models import load_all_ppo_agents,load_all_sac_agents
 # Function to initialize the agent.  This function is used with `launch_client` below,
 # to lauch the client and connect to the server.
 def initialize_agent(agentArgs: list[str]) -> Agent:
-    return HockeyCompetetionAgent(agent=LoadTD7Agents()["td7_all_big"])
+    return HockeyCompetetionAgent(agent=LoadTD7Agents()["td7_all_offfensive"])
 
 def main() -> None:
     launch_client(initialize_agent)

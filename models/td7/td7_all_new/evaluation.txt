@@ -1,0 +1,1 @@
+{'mean_reward': 6.642011782009984, 'std_reward': 4.705409402672064, 'win_counts': {'Agent Wins': 802, 'Opponent Wins': 0, 'Draws': 198}, 'win_rate': 0.802}
