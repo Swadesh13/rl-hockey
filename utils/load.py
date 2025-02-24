@@ -20,6 +20,7 @@ def LoadTD7Agents(evalEnv: HockeyEnv_SB3 = None) -> Dict[str, TD7HockyAgent]:
         "td7_all_new":  TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_all_new"), 
         "td7_all_offfensive":  TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_all_offfensive"), 
         "td7_crash":  TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_crash"), 
+        "td7_last": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_last"),
     }
 
 def LoadAllSacAgents() -> Dict[str, SAC_HockeyAgent]:

@@ -26,13 +26,13 @@ eval_env:
 
 agent:
   save_dir: "models/"
-  save: true
+  save: false
 
 model:
   name: "td7"
   models_dir: "models/"
   load: false 
-  model_load_name: td7_all_offfensive
+  model_load_name: td7_last
   hyperparameters:
     exploration_noise: 
       type : "normal"
@@ -69,8 +69,8 @@ training:
 evaluation:
   mode: "team"
   weak: false
-  algo: "td7"
-  type: "td7_all_new"
+  algo: "sac"
+  type: "sac_reward"
   ep_num: 20
   render_mode: "human"
 
