@@ -6,7 +6,8 @@
         "env_name": "Hockey-v0",
         "weak_opponent": false,
         "additional_rewards": [],
-        "reward_multiplier": 1.0
+        "reward_multiplier": 1.0,
+        "mode": "normal"
     },
     "eval_env": {
         "seed": 42,
@@ -17,11 +18,13 @@
         "additional_rewards": []
     },
     "agent": {
-        "save_dir": "models/"
+        "save_dir": "models/",
+        "save": true
     },
     "model": {
         "name": "td7",
         "models_dir": "models/",
+        "load": false,
         "hyperparameters": {
             "exploration_noise": {
                 "type": "normal",
@@ -61,7 +64,9 @@
     "evaluation": {
         "model_name": "td7_puck_proximity",
         "ep_num": 1000,
-        "render_mode": "rgb_array"
+        "render_mode": "rgb_array",
+        "mode": "normal",
+        "weak": false
     },
     "rnd": {
         "enabled": false

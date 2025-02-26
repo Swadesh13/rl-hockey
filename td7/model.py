@@ -9,6 +9,29 @@ import copy
 from datetime import datetime
 
 class TD7:
+    """
+    TD7 is an actor-critic reinforcement learning algorithm that integrates:
+    - Latent state representations via an encoder.
+    - Prioritized Experience Replay (PER) for efficient sampling.
+    - Double Q-learning (TD3-style) for stable critic updates.
+    - Checkpointing and model saving/loading capabilities.
+
+    Components:
+    - Actor: Learns an optimal policy.
+    - Critic: Estimates Q-values using a double network approach.
+    - Encoder: Encodes states and state-action pairs into latent embeddings.
+
+    Features:
+    - Supports exploration noise strategies (Gaussian, Uniform).
+    - Implements target networks for stability.
+    - Uses periodic checkpointing to prevent catastrophic forgetting.
+    - Applies Laplacian Huber loss for robust critic updates.
+    
+    Args:
+        config (CfgNode): Configuration node containing hyperparameters.
+        actionSpace (gym.Space): The action space of the environment.
+        obsSpace (gym.Space): The observation space of the environment.
+    """
     def __init__(self, 
                  config: CfgNode, 
                  actionSpace: gym.Space, 

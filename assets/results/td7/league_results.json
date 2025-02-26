@@ -1,0 +1,452 @@
+{
+    "PlainVsBots vs PPVsBots": {
+        "mean_reward": -2.817170960226999,
+        "std_reward": 10.178115360868041,
+        "win_counts": {
+            "Agent Wins": 404,
+            "Opponent Wins": 559,
+            "Draws": 37
+        },
+        "win_rate": 0.404
+    },
+    "PlainVsBots vs OP+PPVsBots": {
+        "mean_reward": -3.9357146661290128,
+        "std_reward": 3.3114207601452397,
+        "win_counts": {
+            "Agent Wins": 32,
+            "Opponent Wins": 118,
+            "Draws": 850
+        },
+        "win_rate": 0.032
+    },
+    "PlainVsBots vs PlainVsAll": {
+        "mean_reward": -11.421268354975492,
+        "std_reward": 0.35166749709233336,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 999,
+            "Draws": 1
+        },
+        "win_rate": 0.0
+    },
+    "PlainVsBots vs PlainSelfPlay+OP+PPVsBots": {
+        "mean_reward": -10.724814666398427,
+        "std_reward": 2.644267017554443,
+        "win_counts": {
+            "Agent Wins": 17,
+            "Opponent Wins": 983,
+            "Draws": 0
+        },
+        "win_rate": 0.017
+    },
+    "PlainVsBots vs SelfPlayOP+PPVsAll": {
+        "mean_reward": 8.330825862660928,
+        "std_reward": 3.014338483126302,
+        "win_counts": {
+            "Agent Wins": 921,
+            "Opponent Wins": 1,
+            "Draws": 78
+        },
+        "win_rate": 0.921
+    },
+    "PlainVsBots vs OPVsTeam": {
+        "mean_reward": -0.3831860193900272,
+        "std_reward": 10.11950087731917,
+        "win_counts": {
+            "Agent Wins": 515,
+            "Opponent Wins": 485,
+            "Draws": 0
+        },
+        "win_rate": 0.515
+    },
+    "PlainVsBots vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -12.62468198364996,
+        "std_reward": 1.6940015365019292,
+        "win_counts": {
+            "Agent Wins": 4,
+            "Opponent Wins": 993,
+            "Draws": 3
+        },
+        "win_rate": 0.004
+    },
+    "PlainVsBots vs WeakBasic": {
+        "mean_reward": 6.914628165226161,
+        "std_reward": 4.837149282932141,
+        "win_counts": {
+            "Agent Wins": 780,
+            "Opponent Wins": 4,
+            "Draws": 216
+        },
+        "win_rate": 0.78
+    },
+    "PlainVsBots vs StrongBasic": {
+        "mean_reward": 9.377189137034653,
+        "std_reward": 1.3441977670816627,
+        "win_counts": {
+            "Agent Wins": 991,
+            "Opponent Wins": 2,
+            "Draws": 7
+        },
+        "win_rate": 0.991
+    },
+    "PPVsBots vs OP+PPVsBots": {
+        "mean_reward": -1.532112263388216,
+        "std_reward": 9.950529739526475,
+        "win_counts": {
+            "Agent Wins": 459,
+            "Opponent Wins": 483,
+            "Draws": 58
+        },
+        "win_rate": 0.459
+    },
+    "PPVsBots vs PlainVsAll": {
+        "mean_reward": -11.271474366940646,
+        "std_reward": 0.33582017519518165,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 1000,
+            "Draws": 0
+        },
+        "win_rate": 0.0
+    },
+    "PPVsBots vs PlainSelfPlay+OP+PPVsBots": {
+        "mean_reward": -10.664133483712215,
+        "std_reward": 2.803752469290694,
+        "win_counts": {
+            "Agent Wins": 19,
+            "Opponent Wins": 981,
+            "Draws": 0
+        },
+        "win_rate": 0.019
+    },
+    "PPVsBots vs SelfPlayOP+PPVsAll": {
+        "mean_reward": 1.5994495832389115,
+        "std_reward": 5.122489288417354,
+        "win_counts": {
+            "Agent Wins": 313,
+            "Opponent Wins": 0,
+            "Draws": 687
+        },
+        "win_rate": 0.313
+    },
+    "PPVsBots vs OPVsTeam": {
+        "mean_reward": -7.410060132044896,
+        "std_reward": 8.065582092123957,
+        "win_counts": {
+            "Agent Wins": 191,
+            "Opponent Wins": 808,
+            "Draws": 1
+        },
+        "win_rate": 0.191
+    },
+    "PPVsBots vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -11.462727998911497,
+        "std_reward": 4.180863485924495,
+        "win_counts": {
+            "Agent Wins": 37,
+            "Opponent Wins": 958,
+            "Draws": 5
+        },
+        "win_rate": 0.037
+    },
+    "PPVsBots vs WeakBasic": {
+        "mean_reward": 9.471305695753944,
+        "std_reward": 1.240682013031609,
+        "win_counts": {
+            "Agent Wins": 985,
+            "Opponent Wins": 0,
+            "Draws": 15
+        },
+        "win_rate": 0.985
+    },
+    "PPVsBots vs StrongBasic": {
+        "mean_reward": 9.618394948750097,
+        "std_reward": 0.7358608053077081,
+        "win_counts": {
+            "Agent Wins": 999,
+            "Opponent Wins": 1,
+            "Draws": 0
+        },
+        "win_rate": 0.999
+    },
+    "OP+PPVsBots vs PlainVsAll": {
+        "mean_reward": -11.289924057572184,
+        "std_reward": 1.5163305994226721,
+        "win_counts": {
+            "Agent Wins": 5,
+            "Opponent Wins": 995,
+            "Draws": 0
+        },
+        "win_rate": 0.005
+    },
+    "OP+PPVsBots vs PlainSelfPlay+OP+PPVsBots": {
+        "mean_reward": -10.736968226635822,
+        "std_reward": 2.274392504473522,
+        "win_counts": {
+            "Agent Wins": 12,
+            "Opponent Wins": 988,
+            "Draws": 0
+        },
+        "win_rate": 0.012
+    },
+    "OP+PPVsBots vs SelfPlayOP+PPVsAll": {
+        "mean_reward": -0.8415271299813387,
+        "std_reward": 1.296126346836135,
+        "win_counts": {
+            "Agent Wins": 8,
+            "Opponent Wins": 6,
+            "Draws": 986
+        },
+        "win_rate": 0.008
+    },
+    "OP+PPVsBots vs OPVsTeam": {
+        "mean_reward": -1.7522877107601615,
+        "std_reward": 10.40250134167145,
+        "win_counts": {
+            "Agent Wins": 464,
+            "Opponent Wins": 533,
+            "Draws": 3
+        },
+        "win_rate": 0.464
+    },
+    "OP+PPVsBots vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -11.741719668070363,
+        "std_reward": 0.5210507041828406,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 1000,
+            "Draws": 0
+        },
+        "win_rate": 0.0
+    },
+    "OP+PPVsBots vs WeakBasic": {
+        "mean_reward": 8.038401339307029,
+        "std_reward": 3.6116747483405534,
+        "win_counts": {
+            "Agent Wins": 869,
+            "Opponent Wins": 1,
+            "Draws": 130
+        },
+        "win_rate": 0.869
+    },
+    "OP+PPVsBots vs StrongBasic": {
+        "mean_reward": 9.586014440544542,
+        "std_reward": 0.29218796777583445,
+        "win_counts": {
+            "Agent Wins": 1000,
+            "Opponent Wins": 0,
+            "Draws": 0
+        },
+        "win_rate": 1.0
+    },
+    "PlainVsAll vs PlainSelfPlay+OP+PPVsBots": {
+        "mean_reward": -10.918339665988402,
+        "std_reward": 1.8295184616425244,
+        "win_counts": {
+            "Agent Wins": 8,
+            "Opponent Wins": 992,
+            "Draws": 0
+        },
+        "win_rate": 0.008
+    },
+    "PlainVsAll vs SelfPlayOP+PPVsAll": {
+        "mean_reward": -2.9926747187166876,
+        "std_reward": 1.4906912460571073,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 0,
+            "Draws": 1000
+        },
+        "win_rate": 0.0
+    },
+    "PlainVsAll vs OPVsTeam": {
+        "mean_reward": -11.024470858454057,
+        "std_reward": 0.4370789838162668,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 999,
+            "Draws": 1
+        },
+        "win_rate": 0.0
+    },
+    "PlainVsAll vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -11.767473619157366,
+        "std_reward": 7.349274440728383,
+        "win_counts": {
+            "Agent Wins": 137,
+            "Opponent Wins": 477,
+            "Draws": 386
+        },
+        "win_rate": 0.137
+    },
+    "PlainVsAll vs WeakBasic": {
+        "mean_reward": 9.306120652717738,
+        "std_reward": 0.9952584126612362,
+        "win_counts": {
+            "Agent Wins": 997,
+            "Opponent Wins": 0,
+            "Draws": 3
+        },
+        "win_rate": 0.997
+    },
+    "PlainVsAll vs StrongBasic": {
+        "mean_reward": 8.143812518555405,
+        "std_reward": 1.9632458762093938,
+        "win_counts": {
+            "Agent Wins": 982,
+            "Opponent Wins": 1,
+            "Draws": 17
+        },
+        "win_rate": 0.982
+    },
+    "PlainSelfPlay+OP+PPVsBots vs SelfPlayOP+PPVsAll": {
+        "mean_reward": -3.2252375874047865,
+        "std_reward": 0.9111473189029308,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 11,
+            "Draws": 989
+        },
+        "win_rate": 0.0
+    },
+    "PlainSelfPlay+OP+PPVsBots vs OPVsTeam": {
+        "mean_reward": -11.39599994475201,
+        "std_reward": 2.4752819486711677,
+        "win_counts": {
+            "Agent Wins": 12,
+            "Opponent Wins": 988,
+            "Draws": 0
+        },
+        "win_rate": 0.012
+    },
+    "PlainSelfPlay+OP+PPVsBots vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -12.27261353901272,
+        "std_reward": 0.736390417438457,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 1000,
+            "Draws": 0
+        },
+        "win_rate": 0.0
+    },
+    "PlainSelfPlay+OP+PPVsBots vs WeakBasic": {
+        "mean_reward": 9.541449043449317,
+        "std_reward": 0.7125909104031949,
+        "win_counts": {
+            "Agent Wins": 996,
+            "Opponent Wins": 0,
+            "Draws": 4
+        },
+        "win_rate": 0.996
+    },
+    "PlainSelfPlay+OP+PPVsBots vs StrongBasic": {
+        "mean_reward": 8.481571193120176,
+        "std_reward": 3.134335242518142,
+        "win_counts": {
+            "Agent Wins": 979,
+            "Opponent Wins": 21,
+            "Draws": 0
+        },
+        "win_rate": 0.979
+    },
+    "SelfPlayOP+PPVsAll vs OPVsTeam": {
+        "mean_reward": -11.060241766883545,
+        "std_reward": 0.49551658912591856,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 1000,
+            "Draws": 0
+        },
+        "win_rate": 0.0
+    },
+    "SelfPlayOP+PPVsAll vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -11.835827542795009,
+        "std_reward": 0.45763145549644746,
+        "win_counts": {
+            "Agent Wins": 0,
+            "Opponent Wins": 1000,
+            "Draws": 0
+        },
+        "win_rate": 0.0
+    },
+    "SelfPlayOP+PPVsAll vs WeakBasic": {
+        "mean_reward": 8.849520016325505,
+        "std_reward": 1.3492002299968973,
+        "win_counts": {
+            "Agent Wins": 989,
+            "Opponent Wins": 1,
+            "Draws": 10
+        },
+        "win_rate": 0.989
+    },
+    "SelfPlayOP+PPVsAll vs StrongBasic": {
+        "mean_reward": 8.350474665608518,
+        "std_reward": 2.6324979739149494,
+        "win_counts": {
+            "Agent Wins": 971,
+            "Opponent Wins": 10,
+            "Draws": 19
+        },
+        "win_rate": 0.971
+    },
+    "OPVsTeam vs OP+PPVsAllSelfPlayVsAll": {
+        "mean_reward": -12.424199938764291,
+        "std_reward": 3.726341010668196,
+        "win_counts": {
+            "Agent Wins": 27,
+            "Opponent Wins": 966,
+            "Draws": 7
+        },
+        "win_rate": 0.027
+    },
+    "OPVsTeam vs WeakBasic": {
+        "mean_reward": 9.53010226020525,
+        "std_reward": 0.6253047015150099,
+        "win_counts": {
+            "Agent Wins": 997,
+            "Opponent Wins": 0,
+            "Draws": 3
+        },
+        "win_rate": 0.997
+    },
+    "OPVsTeam vs StrongBasic": {
+        "mean_reward": 9.065685002560684,
+        "std_reward": 1.9340335074692814,
+        "win_counts": {
+            "Agent Wins": 990,
+            "Opponent Wins": 8,
+            "Draws": 2
+        },
+        "win_rate": 0.99
+    },
+    "OP+PPVsAllSelfPlayVsAll vs WeakBasic": {
+        "mean_reward": 2.689802182687972,
+        "std_reward": 6.621580997949721,
+        "win_counts": {
+            "Agent Wins": 519,
+            "Opponent Wins": 17,
+            "Draws": 464
+        },
+        "win_rate": 0.819
+    },
+    "OP+PPVsAllSelfPlayVsAll vs StrongBasic": {
+        "mean_reward": 6.178886576815058,
+        "std_reward": 5.274003250919033,
+        "win_counts": {
+            "Agent Wins": 802,
+            "Opponent Wins": 15,
+            "Draws": 183
+        },
+        "win_rate": 0.802
+    },
+    "WeakBasic vs StrongBasic": {
+        "mean_reward": -7.662630433529073,
+        "std_reward": 7.29370129817936,
+        "win_counts": {
+            "Agent Wins": 157,
+            "Opponent Wins": 370,
+            "Draws": 473
+        },
+        "win_rate": 0.157
+    }
+}

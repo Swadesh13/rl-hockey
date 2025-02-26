@@ -8,7 +8,8 @@
         "additional_rewards": [
             "puck_proximity"
         ],
-        "reward_multiplier": 1.0
+        "reward_multiplier": 1.0,
+        "mode": "normal"
     },
     "eval_env": {
         "seed": 42,
@@ -19,11 +20,13 @@
         "additional_rewards": []
     },
     "agent": {
-        "save_dir": "models/"
+        "save_dir": "models/",
+        "save": true
     },
     "model": {
         "name": "td7",
         "models_dir": "models/",
+        "load": false,
         "hyperparameters": {
             "exploration_noise": {
                 "type": "normal",
@@ -33,12 +36,12 @@
             "buffer_size": 2000000,
             "learning_starts": 7500,
             "batch_size": 4096,
-            "discount": 0.98,
+            "discount": 0.99,
             "target_update_rate": 125,
             "target_policy_noise": 0.2,
             "policy_freq": 2,
             "noise_clip": 0.2,
-            "learning_rate": 0.0003,
+            "learning_rate": 0.0004,
             "zs_dim": 256,
             "h_dim": 256,
             "device": "cuda",
@@ -61,8 +64,13 @@
         "log_interval": 1000
     },
     "evaluation": {
-        "model_name": "2025-02-15_17-39-31",
+        "model_name": "td7_puck_proximity",
         "ep_num": 1000,
-        "render_mode": "rgb_array"
+        "render_mode": "rgb_array",
+        "mode": "normal",
+        "weak": false
+    },
+    "rnd": {
+        "enabled": false
     }
 }

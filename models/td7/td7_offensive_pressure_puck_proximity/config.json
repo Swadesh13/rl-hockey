@@ -6,10 +6,11 @@
         "env_name": "Hockey-v0",
         "weak_opponent": false,
         "additional_rewards": [
-            "offensive_pressure",
-            "puck_proximity"
+            "puck_proximity",
+            "puck_offensive_pressure"
         ],
-        "reward_multiplier": 1.0
+        "reward_multiplier": 1.0,
+        "mode": "normal"
     },
     "eval_env": {
         "seed": 42,
@@ -20,11 +21,13 @@
         "additional_rewards": []
     },
     "agent": {
-        "save_dir": "models/"
+        "save_dir": "models/",
+        "save": true
     },
     "model": {
         "name": "td7",
         "models_dir": "models/",
+        "load": false,
         "hyperparameters": {
             "exploration_noise": {
                 "type": "normal",
@@ -62,9 +65,11 @@
         "log_interval": 1000
     },
     "evaluation": {
-        "model_name": "2025-02-18_15-48-12",
+        "model_name": "td7_puck_proximity",
         "ep_num": 1000,
-        "render_mode": "rgb_array"
+        "render_mode": "rgb_array",
+        "mode": "normal",
+        "weak": false
     },
     "rnd": {
         "enabled": false

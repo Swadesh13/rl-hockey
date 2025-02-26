@@ -4,6 +4,10 @@ from .model import TD7
 from .agent import TD7HockyAgent
 import multiprocessing
 from henv.env import BasicOpponent
+from utils.evaluate import eval_agent
+import json
+
+
 
 
 if __name__ == "__main__":
@@ -18,7 +22,7 @@ if __name__ == "__main__":
     trainEnv = None
     if args.train:
         if config.train_env.mode == "normal":
-            trainEnv = CreateHockyEnvVector(config.train_env)
+            trainEnv = CreateHockyEnvVector()
         elif config.train_env.mode == "self":
             trainEnv = CreateHockyEnvSelfVector()
         elif config.train_env.mode == "all":

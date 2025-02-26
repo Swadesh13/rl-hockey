@@ -1,11 +1,11 @@
 train_env:
-  n_envs: 16
-  seed: 42
-  render_mode: None
-  mode: "all"
-  env_name: "Hockey-v0"
+  n_envs: 16 # number of parallel environments, recommended to be equal to the number of CPU cores
+  seed: 42 
+  render_mode: None # render mode for the environment
+  mode: "all" # all means vs all the team agents, normal is the basic opponents, self is the td7 agents only
+  env_name: "Hockey-v0" # environment name
   weak_opponent: false
-  additional_rewards: ["offensive_pressure"]
+  additional_rewards: ["offensive_pressure", "puck_proximity"]  # our custom rewards
   reward_multiplier: 1.0
 
 environment:
@@ -31,48 +31,48 @@ agent:
 model:
   name: "td7"
   models_dir: "models/"
-  load: false 
-  model_load_name: td7_last
-  hyperparameters:
+  load: false  # whether to load a model
+  model_load_name: td7_best # name of the model to load
+  hyperparameters: 
     exploration_noise: 
       type : "normal"
       magnitude : 0.1
-    alpha: 0.4
-    buffer_size: 2_000_000  
-    learning_starts: 10_000 
-    batch_size: 4096  
-    discount: 0.99
-    target_update_rate: 125
-    target_policy_noise: 0.2
-    policy_freq: 2
-    noise_clip: 0.5
-    learning_rate: 0.0003
-    zs_dim: 256
-    h_dim: 256
-    device: "cuda"
+    alpha: 0.4 # alpha value for the prioritized experience replay, increasing it will increase the importance of the TD error
+    buffer_size: 2_000_000    # replay buffer size
+    min_priority: 1 # minimum priority value
+    learning_starts: 10_000  # number of steps before starting training
+    batch_size: 4096   # batch size for training
+    discount: 0.99 # discount factor
+    target_update_rate: 125 # number of steps before updating the target network
+    target_policy_noise: 0.2 # target policy smoothing noise
+    policy_freq: 2 # number of steps before updating the policy
+    noise_clip: 0.5 # noise clip value
+    learning_rate: 0.0003 # learning rate
+    zs_dim: 256 # size of the latent space
+    h_dim: 256 # size of the hidden layers
+    device: "cuda" # device to use for training
     seed: 42
-    use_checkpoint: false
-    steps_before_checkpointing: 10_000
-    max_eps_when_checkpointing: 20
-    reset_weight:  0.9
-    min_priority: 1
+    use_checkpoint: false # whether to use the checkpointing mechanism
+    steps_before_checkpointing: 10_000 # number of steps before checkpointing
+    max_eps_when_checkpointing: 20 # maximum number of episodes when checkpointing
+    reset_weight:  0.9 # weight for the reset mechanism , the weights are multiplied by this value
 
 training:
-  total_timesteps: 500_000
-  save_model_every: 10_000
-  eval_starts: 10_000
-  eval_every: 10_000
-  model_path: "dummy not used for compatablity"
+  total_timesteps: 500_000 # total number of training steps
+  save_model_every: 10_000 # number of steps before saving the model
+  eval_starts: 10_000 # number of steps before starting the evaluation
+  eval_every: 10_000 # number of steps before evaluating the model
+  model_path: "dummy not used for compatablity" # not used for compatibility with the training script
   eval_episode_num: 20
   log_interval: 1000
 
 evaluation:
-  mode: "team"
+  mode: "team" # evaluation mode, team means vs all the team agents, normal is the basic opponents,
   weak: false
-  algo: "sac"
-  type: "sac_reward"
-  ep_num: 20
+  algo: "sac" # algorithm to use for evaluation can be td7,ppo,sac
+  type: "sac_reward" # name of the model
+  ep_num: 20 # number of episodes to evaluate
   render_mode: "human"
 
-rnd:
+rnd: # not used for compatibility with the training script
   enabled: false
