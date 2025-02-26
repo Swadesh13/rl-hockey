@@ -1,4 +1,4 @@
-# Reinforcement Learning for a Hockey Environment (PhiZero) 
+# Reinforcement Learning in a Hockey Environment (PhiZero) 
 This work was done as part of the Reinforcement Learning (RL) course at the University of Tübingen in the winter semester 2024/2025. The goal was to develop an RL agent for a 2D two-player hockey game that can beat two basic opponent players as well as all other student's agents in a final tournament.
 
 More on the hockey environment can be found [here](https://github.com/martius-lab/hockey-env/tree/master)
