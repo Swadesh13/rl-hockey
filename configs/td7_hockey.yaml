@@ -5,7 +5,7 @@ train_env:
   mode: "all"
   env_name: "Hockey-v0"
   weak_opponent: false
-  additional_rewards: []
+  additional_rewards: ["offensive_pressure"]
   reward_multiplier: 1.0
 
 environment:
@@ -31,22 +31,22 @@ agent:
 model:
   name: "td7"
   models_dir: "models/"
-  load: true 
-  model_load_name: td7_all
+  load: false 
+  model_load_name: td7_last
   hyperparameters:
     exploration_noise: 
       type : "normal"
       magnitude : 0.1
-    alpha: 0.6
+    alpha: 0.4
     buffer_size: 2_000_000  
-    learning_starts: 7500 
+    learning_starts: 10_000 
     batch_size: 4096  
     discount: 0.99
     target_update_rate: 125
     target_policy_noise: 0.2
     policy_freq: 2
-    noise_clip: 0.2
-    learning_rate: 0.0004
+    noise_clip: 0.5
+    learning_rate: 0.0003
     zs_dim: 256
     h_dim: 256
     device: "cuda"
@@ -58,7 +58,7 @@ model:
     min_priority: 1
 
 training:
-  total_timesteps: 125_000
+  total_timesteps: 500_000
   save_model_every: 10_000
   eval_starts: 10_000
   eval_every: 10_000
@@ -71,7 +71,7 @@ evaluation:
   weak: false
   algo: "sac"
   type: "sac_reward"
-  ep_num: 10
+  ep_num: 20
   render_mode: "human"
 
 rnd:

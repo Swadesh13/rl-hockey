@@ -8,6 +8,7 @@ from ppo.ppo import PPO_HockeyAgent
 
 def LoadTD7Agents(evalEnv: HockeyEnv_SB3 = None) -> Dict[str, TD7HockyAgent]:
     config = get_default_td7_config()
+    config.agent.save = False
     return {
         "td7_plain": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_plain"),
         "td7_puck_proximity": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_puck_proximity"),
@@ -15,7 +16,11 @@ def LoadTD7Agents(evalEnv: HockeyEnv_SB3 = None) -> Dict[str, TD7HockyAgent]:
         "td7_offensive_pressure_puck_proximity": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_offensive_pressure_puck_proximity"),
         "td7_all": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_all"),
         "td7_offensive_pressure_self": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_offensive_pressure_self"),
-        "td7_plain_self": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_plain_self"),
+        "td7_all_big": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_all_big"),
+        "td7_all_new":  TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_all_new"), 
+        "td7_all_offfensive":  TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_all_offfensive"), 
+        "td7_crash":  TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_crash"), 
+        "td7_last": TD7HockyAgent(config=config,evalEnv=evalEnv, loadModel=True, modelsDir="models", modelName="td7_last"),
     }
 
 def LoadAllSacAgents() -> Dict[str, SAC_HockeyAgent]:
@@ -39,6 +44,10 @@ def LoadAllSacAgents() -> Dict[str, SAC_HockeyAgent]:
     sac_reward = SAC_HockeyAgent(eval_env, config=cfg)
     sac_reward.load("models/sac/sac_reward")
     models["sac_reward"] = sac_reward
+    
+    sac_reward = SAC_HockeyAgent(eval_env, config=cfg)
+    sac_reward.load("models/sac/sac_all_1")
+    models["sac_all_1"] = sac_reward
 
     return models
 

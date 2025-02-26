@@ -42,9 +42,25 @@ def CreateHockyEnvAllVector() -> gym.vector.AsyncVectorEnv:
     td7Agents = LoadTD7Agents()
     ppoAgents = LoadAllPPOAgents()
     sacAgents = LoadAllSacAgents()
-    agentList= list(sacAgents.values())
+    agentList = []
+
     agentList.append(BasicOpponent(weak=False))
     agentList.append(BasicOpponent(weak=True))
+    agentList.append(td7Agents["td7_all"])
+    agentList.append(td7Agents["td7_all"])
+    agentList.append(td7Agents["td7_all_big"])
+    agentList.append(td7Agents["td7_all_new"])
+    agentList.append(td7Agents["td7_all_new"])
+    agentList.append(td7Agents["td7_all_big"])
+    agentList.append(sacAgents["sac_all_1"])
+    agentList.append(sacAgents["sac_all_1"])
+    agentList.append(td7Agents["td7_all_offfensive"])
+    agentList.append(sacAgents["sac_reward"])
+    agentList.append(ppoAgents["ppo_pp+op"])
+    agentList.append(td7Agents["td7_all_offfensive"])
+    agentList.append(td7Agents["td7_all_offfensive"])
+
+
 
     envs = gym.vector.AsyncVectorEnv(
         [_CreateHoeckyAgentWrapper(agent=agent) for agent in agentList]
@@ -61,7 +77,6 @@ def _CreateHoeckyAgentWrapper(agent) -> Callable:
 
 def CreatePendulumV1Env() -> gym.Env:
     env = gym.make("Pendulum-v1")
-    env = TimeLimit(env, max_episode_steps=500) 
     return env
 
 def CreatePendulumV1EnvVector(envNum : int = 16) -> gym.vector.AsyncVectorEnv:

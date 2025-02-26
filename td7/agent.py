@@ -1,10 +1,9 @@
 from henv.hockey_agent import HockeyAgent
 from henv.env import HockeyEnv_SB3
 from fvcore.common.config import CfgNode
-import gym.vector
+import gymnasium as gym
 import numpy as np
 import time
-import csv
 from .model import TD7
 import os
 import json
@@ -22,6 +21,7 @@ class TD7HockyAgent(HockeyAgent):
             self.trainEnv = trainEnv
             self.evalEnv = evalEnv
             self.saveDir = os.path.join(self.config.agent.save_dir, config.model.name,f"{self.config.train_env.env_name}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}")
+            self.modelPath = self.saveDir
             self.writer = SummaryWriter(log_dir=self.saveDir)
             if self.config.agent.save:
                 os.makedirs(self.saveDir, exist_ok=True)
@@ -36,7 +36,7 @@ class TD7HockyAgent(HockeyAgent):
                         config_dict = json.load(f)
                     self.config = CfgNode(config_dict)
                 else:
-                    conifg = get_default_td7_config()
+                    config = get_default_td7_config()
                     self.config = config
             else:
                 self.config = config
@@ -175,7 +175,7 @@ class TD7HockyAgent(HockeyAgent):
         return action
     
 
-class TD7PendulumAgent(TD7HockyAgent):
+class TD7GymAgent(TD7HockyAgent):
     def __init__(self, config, model, trainEnv, evalEnv, loadModel = False, modelsDir = None, modelName = None):
         super().__init__(config, model, trainEnv, evalEnv, loadModel, modelsDir, modelName)
 
