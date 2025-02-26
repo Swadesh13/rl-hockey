@@ -37,7 +37,7 @@ class HockeyAgent:
         tb_log_name: str = None,
     ):
         """
-        Trains the PPO model.
+        Trains the HockeyAgent.
 
         Parameters:
         - total_timesteps: Total timesteps for training.

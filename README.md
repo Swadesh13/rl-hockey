@@ -5,7 +5,7 @@ More on the hockey environment can be found [here](https://github.com/martius-la
 
 The working behind the tournament server can be found [here](https://github.com/martius-lab/comprl-hockey-agent)
 
-Certificate for being in the top 7% of participants can be found [here](8th_place_certificate.pdf)
+Certificate for being in the top 7% of participants can be found [here](assets/8th_place_certificate.pdf)
 
 We presented both on- and off-policy solutions for this problem. In particular, these are the algorithms that each of the authors have implemented:
 
@@ -41,6 +41,21 @@ To train PPO against all models check out `ppo/train_against_all.py` or run
 ```
 python -m ppo.train_against_many --config configs/ppo_hockey.yaml -q
 ```
+
+## Soft Actor Critic (SAC)
+
+make sure you are in the top directory rl-hockey 
+
+```bash
+python -m sac.sac --config configs/sac_hockey.yaml -q --train
+```
+
+For league:
+
+```bash
+python -m league.py --config configs/sac_hockey.yaml -q
+```
+
 ## Authors
 Vojtěch Sýkora, Rojan Abolhassani, Swadesh Jana
 

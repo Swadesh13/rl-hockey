@@ -19,11 +19,14 @@ model:
     gamma: 0.99  # the discount factor
     train_freq: 1  # Update the model every `train_freq` steps
     gradient_steps: 1  # How many gradient steps to do after each rollout (see `train_freq`)
+    # policy_kwargs:
+    #   net_arch: [1024, 1024]
   noise: "pink" # None, pink, brown
   prioritized_memory: False
+  prioritized_experience_memory: False
 
 training:
-  total_timesteps: 100000
+  total_timesteps: 300000
   log_interval: 1
   # save_model_every: 10000
   model_path: "sac/models/sac_hockey"

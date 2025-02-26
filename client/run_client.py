@@ -9,8 +9,10 @@ from comprl.client import Agent, launch_client
 
 from ppo.load_ppo_models import load_ppo_agent
 from ppo.ppo import PPO_HockeyAgent
+from sac.sac import SAC_HockeyAgent
 from utils.load import LoadTD7Agents
 from henv.hockey_agent import HockeyCompetetionAgent
+
 
 class RandomAgent(Agent):
     """A hockey agent that simply uses random actions."""
@@ -87,6 +89,36 @@ class PPO_Player(Agent):
         )
 
 
+class SAC_Player(Agent):
+    """A SAC hockey agent."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        from henv.env import HockeyEnv_SB3
+        from utils.parsing import get_default_sac_config
+
+        env = HockeyEnv_SB3()
+        config = get_default_sac_config()
+        self.hockey_agent = SAC_HockeyAgent(env, config)
+        self.hockey_agent.load("logs/league_16/model_39")
+
+    def get_step(self, observation: list[float]) -> list[float]:
+        # print(f"Action: {self.hockey_agent.predict(observation)=}")
+        action_array, _ = self.hockey_agent.predict(observation)  # Unpack tuple
+        return action_array.tolist()  # Convert only the array part to a list
+
+    def on_start_game(self, game_id) -> None:
+        game_id = uuid.UUID(int=int.from_bytes(game_id, byteorder="big"))
+        print(f"Game started (id: {game_id})")
+
+    def on_end_game(self, result: bool, stats: list[float]) -> None:
+        text_result = "won" if result else "lost"
+        print(
+            f"Game ended: {text_result} with my score: "
+            f"{stats[0]} against the opponent with score: {stats[1]}"
+        )
+
+
 # Function to initialize the agent.  This function is used with `launch_client` below,
 # to lauch the client and connect to the server.
 def initialize_agent(agent_args: list[str]) -> Agent:
@@ -95,7 +127,7 @@ def initialize_agent(agent_args: list[str]) -> Agent:
     parser.add_argument(
         "--agent",
         type=str,
-        choices=["weak", "strong", "random", "ppo"],
+        choices=["weak", "strong", "random", "ppo", "td7", "sac"],
         default="weak",
         help="Which agent to use.",
     )
@@ -112,7 +144,9 @@ def initialize_agent(agent_args: list[str]) -> Agent:
     elif args.agent == "ppo":
         agent = PPO_Player()
     elif args.agent == "td7":
-        agent = HockeyCompetetionAgent(LoadTD7Agents()["td7_plain"])
+        agent = HockeyCompetetionAgent(LoadTD7Agents()["td7_last"])
+    elif args.agent == "sac":
+        agent = SAC_Player()
     else:
         raise ValueError(f"Unknown agent: {args.agent}")
 

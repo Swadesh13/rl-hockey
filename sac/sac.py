@@ -35,9 +35,9 @@ if __name__ == "__main__":
     args = parse_args()
     cfg = get_config_from_args(args, cfgnode=True)
 
-    if not args.quiet:
-        print_config(cfg)
-        print_args(args)
+    # if not args.quiet:
+    #     print_config(cfg)
+    #     print_args(args)
 
     from henv.env import HockeyEnv_SB3
 
@@ -47,15 +47,15 @@ if __name__ == "__main__":
         cfg.environment.reward_multiplier,
     )
 
-    # for noise in ["brown", "pink", None]:
-    #     cfg.model.noise = noise
-    print(cfg)
-    agent = SAC_HockeyAgent(env, cfg)
+    for noise in ["brown", "pink", None]:
+        cfg.model.noise = noise
+        print(cfg.model.noise)
+        agent = SAC_HockeyAgent(env, cfg)
 
-    if args.train:
-        agent.train(total_timesteps=cfg.training.total_timesteps)
-        agent.save()
+        if args.train:
+            agent.train(total_timesteps=cfg.training.total_timesteps)
+            agent.save()
 
-    if args.eval:
-        agent.load()
-        agent.evaluate(num_episodes=args.eval_episodes)
+        if args.eval:
+            agent.load()
+            agent.evaluate(num_episodes=args.eval_episodes)

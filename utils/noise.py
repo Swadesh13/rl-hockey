@@ -221,7 +221,7 @@ class ColoredNoiseProcess:
         return ret if n > 1 else ret[..., 0]
 
 
-"""Colored noise implementations for Stable Baselines3"""
+# Colored noise implementations for Stable Baselines3
 
 
 class ColoredActionNoise(ActionNoise):
