@@ -28,8 +28,8 @@ model:
     use_sde: false
     sde_sample_freq: -1
     target_kl: null
-    vf_coef: 0.6482388887006054
-    ent_coef: 0.0009673352
+    vf_coef: 0.65
+    ent_coef: 0.001
     max_grad_norm: 0.6
     policy_kwargs:
       net_arch:
@@ -45,4 +45,4 @@ training:
 logging:
   log_dir: ./league_logs/
   verbose: 0
-  tensorboard: ./ppo/logs/weak/
+  tensorboard: ./ppo/logs/op/

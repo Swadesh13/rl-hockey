@@ -53,6 +53,7 @@ def eval_agent(
     win_counts = {"Agent Wins": 0, "Opponent Wins": 0, "Draws": 0}
     episodes_per_mode = num_episodes // len(modes)
 
+    print(f"Running {num_episodes} episodes in {modes} modes...")
     for episode in range(num_episodes):
         # Determine the mode based on the episode range
         mode_idx = episode // episodes_per_mode
@@ -105,7 +106,7 @@ def eval_agent(
     win_rate = win_counts["Agent Wins"] / num_episodes
     if verbose > 0:
         print(f"Overall Avg Reward: {mean_reward:>5.2f} ± {std_reward:.2f}")
-        print(f"Win Statistics: {win_counts} win_rate={win_rate:.2f}%")
+        print(f"Win Statistics: {win_counts} win_rate={win_rate*100:.2f}%")
 
     info = {
         "mean_reward": mean_reward,

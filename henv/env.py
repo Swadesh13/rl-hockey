@@ -9,6 +9,10 @@ from henv.rewards import filter_reward, get_additional_rewards
 
 
 class BasicOpponent(hockey_env.BasicOpponent):
+    """
+    A basic opponent agent that acts based on predefined rules.
+    """
+
     def __init__(self, weak=False, keep_mode=True):
         super().__init__(weak, keep_mode)
 
@@ -17,12 +21,24 @@ class BasicOpponent(hockey_env.BasicOpponent):
 
 
 class HockeyEnv_SB3(hockey_env.HockeyEnv):
+    """
+    Custom Hockey environment for SB3 integration, supporting additional rewards.
+    """
+
     def __init__(
         self,
         weak_opponent: bool = False,
         additional_rewards: List[str] = None,
         reward_multiplier: float = 1.0,
     ):
+        """
+        Initializes the Hockey environment with optional additional rewards.
+
+        Args:
+            weak_opponent (bool): Whether to use a weak opponent.
+            additional_rewards (List[str], optional): List of additional rewards.
+            reward_multiplier (float, optional): Reward scaling factor.
+        """
         # Initialize the parent class with the weak_opponent parameter
         super().__init__()
         self.opponent = BasicOpponent(weak=weak_opponent)
@@ -52,11 +68,20 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
             assert len(d) == 0, f"Unknown additional reward: {d}"
         self.additional_rewards = additional_rewards
         self.reward_multiplier = reward_multiplier
-        print(
-            f"Additional rewards: {additional_rewards}, Reward multiplier: {reward_multiplier}"
-        )
+        # print(
+        #     f"Additional rewards: {additional_rewards}, Reward multiplier: {reward_multiplier}"
+        # )
 
     def step(self, action):
+        """
+        Takes a step in the environment, applying the selected action.
+
+        Args:
+            action: The action chosen by the agent.
+
+        Returns:
+            Tuple: Observation, modified reward, done flag, time, and info dictionary.
+        """
         ob2 = self.obs_agent_two()
         a2, _ = self.opponent.predict(ob2, deterministic=True)
         action2 = np.hstack([action, a2])
@@ -76,6 +101,18 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
         return obs, reward, done, t, info
 
     def reset(self, seed=None, options=None, one_starting=None, mode=None):
+        """
+        Resets the environment.
+
+        Args:
+            seed (int, optional): Random seed.
+            options (dict, optional): Additional reset options.
+            one_starting: Unused parameter for compatibility.
+            mode: Unused parameter for compatibility.
+
+        Returns:
+            The initial observation.
+        """
         # Seed the environment with the given seed
         super().seed(seed)
         return super().reset(one_starting, mode)
@@ -88,15 +125,16 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
         reward_multiplier: float = 1.0,
     ):
         """
-        Create and return a vectorized version of the HockeyEnv_SB3 environment.
+        Creates a vectorized version of the Hockey environment.
 
         Args:
             n_envs (int): Number of environments to vectorize.
             weak_opponent (bool): Whether to use a weak opponent.
-            additional_rewards (List[str]): List of additional rewards to use.
+            additional_rewards (List[str], optional): List of additional rewards.
+            reward_multiplier (float, optional): Reward scaling factor.
 
         Returns:
-            VecEnv: A vectorized environment.
+            VecEnv: Vectorized environment instance.
         """
 
         def create_env():
@@ -109,10 +147,16 @@ class HockeyEnv_SB3(hockey_env.HockeyEnv):
         return make_vec_env(create_env, n_envs=n_envs)
 
 
+# ======== Random Network Distillation (RND) ========
+
 from ppo.rnd import RNDModel
 
 
 class HockeyEnv_SB3_RND(HockeyEnv_SB3):
+    """
+    Extended Hockey environment with Random Network Distillation (RND).
+    """
+
     def __init__(
         self,
         config,
@@ -120,6 +164,15 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
         additional_rewards: List[str] = None,
         reward_multiplier: float = 1.0,
     ):
+        """
+        Initializes the environment with RND support.
+
+        Args:
+            config: Configuration object.
+            weak_opponent (bool): Whether to use a weak opponent.
+            additional_rewards (List[str], optional): List of additional rewards.
+            reward_multiplier (float, optional): Reward scaling factor.
+        """
         super().__init__(
             weak_opponent=weak_opponent,
             additional_rewards=additional_rewards,
@@ -128,16 +181,24 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
         self.config = config
         self.use_rnd = config.rnd.enabled
         if self.use_rnd:
-            print(f"Using RND: \n{config.rnd}\n")
+            # print(f"Using RND: \n{config.rnd}\n")
             self.rnd = RNDModel(
                 input_dim=self.observation_space.shape[0],
                 hidden_dim=config.rnd.rnd_hidden_size,
             )
             self.intrinsic_reward_weight = config.rnd.intrinsic_reward_weight
-            # self.extrinsic_reward_weight = config.rnd.extrinsic_reward_weight
             self.extrinsic_reward_weight = self.config.environment.reward_multiplier
 
     def step(self, action):
+        """
+        Takes a step in the environment, incorporating RND intrinsic rewards.
+
+        Args:
+            action: The action chosen by the agent.
+
+        Returns:
+            Tuple: Observation, modified reward, done flag, truncation flag, and info dictionary.
+        """
         obs, reward, done, trunc, info = super().step(action)
 
         if self.use_rnd:
@@ -145,10 +206,7 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
                 self.rnd.compute_intrinsic_reward(obs) * self.intrinsic_reward_weight
             )
 
-            # Decide how to combine rewards
-            # if self.config.rnd.use_only_intrinsic:
-            #     reward = intrinsic_reward
-            # else:
+            # Combine intrinsic and extrinsic rewards
             reward = self.extrinsic_reward_weight * reward + intrinsic_reward
 
             # Store intrinsic reward in info for debugging/logging
@@ -178,6 +236,7 @@ class HockeyEnv_SB3_RND(HockeyEnv_SB3):
             n_envs (int): Number of environments to vectorize.
             weak_opponent (bool): Whether to use a weak opponent.
             additional_rewards (List[str]): List of additional rewards to use.
+            reward_multiplier (float, optional): Reward scaling factor.
 
         Returns:
             VecEnv: A vectorized environment.

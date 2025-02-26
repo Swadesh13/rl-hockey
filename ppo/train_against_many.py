@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json
 import os
 import random
@@ -7,7 +6,6 @@ from glob import glob
 import numpy as np
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.logger import configure
-from utils.load import LoadTD7Agents
 
 from henv.env import BasicOpponent, HockeyEnv_SB3, HockeyEnv_SB3_RND
 from ppo.load_ppo_models import (
@@ -17,6 +15,7 @@ from ppo.load_ppo_models import (
     load_ppo_agent,
 )
 from ppo.ppo import PPO_HockeyAgent
+from utils.load import LoadTD7Agents
 from utils.parsing import (
     get_config_from_args,
     get_eval_env,
@@ -34,7 +33,6 @@ ALL_MODELS.update(LoadTD7Agents())
 ALL_MODELS.update(load_all_ppo_agents())
 
 
-
 def train_against_many(
     opponent_dict,
     training_mode="random",
@@ -44,6 +42,18 @@ def train_against_many(
     eval_episodes=50,
     tensorboard_log=None,
 ):
+    """
+    Train a PPO agent against multiple opponents in a specified training mode.
+
+    Args:
+        opponent_dict (dict): Dictionary of opponents to train against.
+        training_mode (str): Training mode ('random' or 'stable').
+        num_iters (int): Number of training iterations.
+        timesteps_per_iter (int): Timesteps per iteration.
+        load (str or None): Whether to load a pretrained model ('yes', 'no', or path).
+        eval_episodes (int): Number of evaluation episodes.
+        tensorboard_log (str or None): Path for tensorboard logs.
+    """
     # Parse standard configuration and any additional command-line args
     args = parse_args()
     cfg = get_config_from_args(args, cfgnode=True)
@@ -110,14 +120,14 @@ def train_against_many(
 
     eval_against_all_models(
         agent,
-        ALL_MODELS,
+        opponent_dict,
         get_eval_env(),
         agent_name=args.config,
         num_episodes=eval_episodes,
         save_path=os.path.join(agent.save_dir, "eval_before.png"),
     )
 
-    # Option 1: Stable (alternating) training: cycle through all opponents each iteration.
+    # Option 1: Stable training: cycle through all opponents each iteration.
     if training_mode.lower() == "stable":
         print("\n--- Running stable alternating training ---\n")
         for cycle in range(num_iters):
@@ -136,10 +146,10 @@ def train_against_many(
                 )
                 agent.model.save(save_path)
                 print(f"Saved model after training against {opp_name} at {save_path}")
-                
+
             eval_against_all_models(
                 agent,
-                ALL_MODELS,
+                opponent_dict,
                 get_eval_env(),
                 agent_name=args.config,
                 num_episodes=eval_episodes,
@@ -183,7 +193,7 @@ def train_against_many(
 
     eval_against_all_models(
         agent,
-        ALL_MODELS,
+        opponent_dict,
         get_eval_env(),
         agent_name=args.config,
         num_episodes=eval_episodes,
@@ -192,32 +202,46 @@ def train_against_many(
 
 
 if __name__ == "__main__":
-    opponent_dict = {
-        # "basic_strong": BasicOpponent(weak=False),
-        # "basic_weak": BasicOpponent(weak=True),
-    }
-    opponent_dict.update(load_all_sac_agents())
-    opponent_dict.pop("sac_brown", None)
-    # opponent_dict.pop("sac_pink", None)
-    opponent_dict.pop("sac_reward", None)
-    # opponent_dict.pop("sac_vanilla", None)
 
-    opponent_dict.update(LoadTD7Agents())
-    opponent_dict.pop("td7_all", None)
-    opponent_dict.pop("td7_offensive_pressure", None)
-    opponent_dict.pop("td7_offensive_pressure_puck_proximity", None)
-    # opponent_dict.pop("td7_offensive_pressure_self", None)
-    # opponent_dict.pop("td7_plain", None)
-    opponent_dict.pop("td7_puck_proximity", None)
+    # Define the opponents to train against
+    opponent_dict = {}
 
-    # opponent_dict.update(load_all_ppo_agents())
-    # opponent_dict.pop("ppo_gaussian_noise", None)
-    # opponent_dict.pop("ppo_offensive_pressure", None)
-    # opponent_dict.pop("ppo_pp+op", None)
-    # opponent_dict.pop("ppo_puck_proximity", None)
-    # opponent_dict.pop("ppo_rnd_e1_i0.01", None)
-    # opponent_dict.pop("ppo_vanilla", None)
-    ALL_MODELS = opponent_dict
+    # Comment out the ones you don't want to train against
+
+    # BASIC OPPONENTS
+    opponent_dict["basic_strong"] = ALL_MODELS["basic_strong"]
+    opponent_dict["basic_weak"] = ALL_MODELS["basic_weak"]
+
+    # SAC OPPONENTS
+    opponent_dict["sac_vanilla"] = ALL_MODELS["sac_vanilla"]
+    opponent_dict["sac_pink"] = ALL_MODELS["sac_pink"]
+    opponent_dict["sac_brown"] = ALL_MODELS["sac_brown"]
+    opponent_dict["sac_reward"] = ALL_MODELS["sac_reward"]
+    opponent_dict["sac_all_1"] = ALL_MODELS["sac_all_1"]
+
+    # TD7 OPPONENTS
+    opponent_dict["td7_plain"] = ALL_MODELS["td7_plain"]
+    opponent_dict["td7_puck_proximity"] = ALL_MODELS["td7_puck_proximity"]
+    opponent_dict["td7_offensive_pressure"] = ALL_MODELS["td7_offensive_pressure"]
+    opponent_dict["td7_offensive_pressure_puck_proximity"] = ALL_MODELS[
+        "td7_offensive_pressure_puck_proximity"
+    ]
+    opponent_dict["td7_all"] = ALL_MODELS["td7_all"]
+    opponent_dict["td7_offensive_pressure_self"] = ALL_MODELS[
+        "td7_offensive_pressure_self"
+    ]
+    opponent_dict["td7_all_big"] = ALL_MODELS["td7_all_big"]
+    opponent_dict["td7_all_new"] = ALL_MODELS["td7_all_new"]
+    opponent_dict["td7_all_offfensive"] = ALL_MODELS["td7_all_offfensive"]
+    opponent_dict["td7_crash"] = ALL_MODELS["td7_crash"]
+
+    # PPO OPPONENTS
+    opponent_dict["ppo_vanilla"] = ALL_MODELS["ppo_vanilla"]
+    opponent_dict["ppo_gaussian_noise"] = ALL_MODELS["ppo_gaussian_noise"]
+    opponent_dict["ppo_offensive_pressure"] = ALL_MODELS["ppo_offensive_pressure"]
+    opponent_dict["ppo_pp+op"] = ALL_MODELS["ppo_pp+op"]
+    opponent_dict["ppo_puck_proximity"] = ALL_MODELS["ppo_puck_proximity"]
+    opponent_dict["ppo_rnd_e1_i0.01"] = ALL_MODELS["ppo_rnd_e1_i0.01"]
 
     train_against_many(
         opponent_dict,
@@ -226,5 +250,5 @@ if __name__ == "__main__":
         timesteps_per_iter=250_000,
         load="yes",
         eval_episodes=50,
-        tensorboard_log="./ppo/logs/op_sac_td7/",
+        tensorboard_log="./ppo/logs/many/",
     )

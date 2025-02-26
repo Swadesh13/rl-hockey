@@ -14,6 +14,12 @@ def load_ppo_agent(config_path: str):
     """
     Load a PPO agent from a saved model.
 
+    Args:
+        config_path (str): Path to the PPO configuration file.
+
+    Returns:
+        PPO_HockeyAgent: Loaded PPO agent.
+
     models/ppo/ppo_vanilla.yaml
     models/ppo/ppo_gaussian_noise.yaml
     models/ppo/ppo_offensive_pressure.yaml
@@ -33,7 +39,8 @@ def load_ppo_agent(config_path: str):
 
 def load_all_ppo_agents():
     """
-    Load all saved PPO agents.
+    Returns:
+        dict: Dictionary of loaded PPO agents. {agent_name: agent}
     """
     models = [
         "ppo_vanilla",
@@ -52,6 +59,12 @@ def load_all_ppo_agents():
 
 
 def load_all_sac_agents():
+    """
+    Load all saved SAC agents.
+
+    Returns:
+        dict: Dictionary of loaded SAC agents.
+    """
     cfg = convert_to_cfgnode(load_config("configs/sac_hockey.yaml"))
 
     eval_env = get_eval_env()
@@ -73,11 +86,17 @@ def load_all_sac_agents():
     sac_reward.load("models/sac/sac_reward")
     models["sac_reward"] = sac_reward
 
+    sac_all_1 = SAC_HockeyAgent(eval_env, config=cfg)
+    sac_all_1.load("models/sac/sac_all_1")
+    models["sac_all_1"] = sac_all_1
+
     return models
 
 
 def reset_env():
-    """Fully resets Pygame and the environment to avoid rendering crashes."""
+    """
+    Fully resets Pygame and the environment to avoid rendering crashes.
+    """
     pygame.quit()  # Quit Pygame
     pygame.display.quit()  # Close display
     gc.collect()  # Force garbage collection to clear old envs
@@ -95,13 +114,16 @@ def eval_against_all_models(
     render_mode="rgb_array",
 ):
     """
-    Evaluate the agent against all saved models and plot Mean Reward with Std Error Bars
-    while also displaying Win Rate as a bar chart.
+    Evaluate the agent against all saved models and generate performance plots.
 
-    Parameters:
-    - agent: The agent to evaluate.
-    - num_episodes: Number of episodes to evaluate.
-    - models: dictionary of models to evaluate against. {name: agent}
+    Args:
+        agent: The agent to evaluate.
+        models (dict): Dictionary of models to evaluate against.
+        eval_env: The evaluation environment.
+        agent_name (str): Name of the agent.
+        num_episodes (int, optional): Number of episodes to evaluate. Defaults to 10.
+        save_path (str, optional): Path to save the plot. Defaults to None.
+        render_mode (str, optional): Render mode for evaluation. Defaults to "rgb_array".
     """
     print(
         f"\n ===== Evaluating *{agent_name}* against all models ({num_episodes} episodes) =====\n"

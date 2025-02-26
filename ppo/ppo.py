@@ -28,9 +28,10 @@ class PPO_HockeyAgent(HockeyAgent):
         """
         Initializes the PPO agent for the Hockey environment.
 
-        Parameters:
-        - env: The environment instance.
-        - config: Configuration node (CfgNode).
+        Args:
+            env: The environment instance.
+            config: Configuration node (CfgNode).
+            eval (bool, optional): Whether the agent is in evaluation mode. Defaults to False.
         """
         super().__init__(env, config)
         self.use_rnd = config.rnd.enabled
@@ -90,7 +91,13 @@ class PPO_HockeyAgent(HockeyAgent):
         callbacks=None,
     ):
         """
-        Overrides the train method to include optional action noise.
+        Trains the PPO agent, with optional action noise.
+
+        Args:
+            total_timesteps (int, optional): Number of training timesteps.
+            log_interval (int, optional): Logging interval.
+            progress_bar (bool, optional): Whether to show a progress bar.
+            callbacks (list, optional): List of callbacks for training.
         """
         if self.noise:
             print(f"Applying noise: {self.noise}")
@@ -100,7 +107,10 @@ class PPO_HockeyAgent(HockeyAgent):
 
     def load(self, load_path=None):
         """
-        Loads the PPO model.
+        Loads the PPO model from a specified path.
+
+        Args:
+            load_path (str, optional): Path to the saved model.
         """
         path = load_path or self.model_path
         if os.path.exists(f"{path}.zip"):
@@ -111,14 +121,14 @@ class PPO_HockeyAgent(HockeyAgent):
 
     def _initialize_noise(self, noise_type, env):
         """
-        Initializes the appropriate noise type based on the string input.
+        Initializes the specified type of action noise.
 
-        Parameters:
-        - noise_type (str): Type of noise (e.g., 'pink', 'brown', 'white', 'gaussian', 'ornstein').
-        - env: The environment instance to get action dimensions.
+        Args:
+            noise_type (str): Type of noise ('pink', 'brown', 'white', 'gaussian', 'ornstein').
+            env: The environment instance.
 
         Returns:
-        - ActionNoise object or None if no valid noise type is provided.
+            ActionNoise: The initialized noise object.
         """
         action_dim = env.action_space.shape[0]  # Default action dimension
         seq_len = 250  # Fixed sequence length
@@ -151,7 +161,7 @@ class PPO_HockeyAgent(HockeyAgent):
 
     def _create_logging_dir(self):
         """
-        Creates a logging directory for the PPO agent.
+        Creates a logging directory for storing model logs and configuration.
         """
         tnsr_dir = self.config.logging.tensorboard
         time.sleep(np.random.uniform(0, 15))
@@ -161,8 +171,11 @@ class PPO_HockeyAgent(HockeyAgent):
 
     def set_opponent(self, opponent, opponent_name=None):
         """
-        Set a new opponent for the environment.
-        The opponent must implement a `predict()` method.
+        Sets an opponent for the agent in the environment.
+
+        Args:
+            opponent: The opponent agent.
+            opponent_name (str, optional): Name of the opponent.
         """
         if hasattr(self.env, "envs"):
             for single_env in self.env.envs:
@@ -202,30 +215,32 @@ if __name__ == "__main__":
 
         agent = PPO_HockeyAgent(env, config=cfg)
 
-        agent.load()  # TODO make a parser for this
+        # agent.load()  # uncomment out if you want to start training from loaded model
 
-        # --- CODE TO SET A DIFFERENT OPPONENT ---
-        # For example, load a different PPO agent as the opponent.
+        # === SET A DIFFERENT OPPONENT ===
         # from ppo.load_ppo_models import load_ppo_agent
 
         # opponent_config_path = "models/ppo/ppo_vanilla.yaml"
         # opponent_agent = load_ppo_agent(opponent_config_path)
         # agent.set_opponent(opponent_agent, opponent_name=opponent_config_path)
-        # --------------------------------------------------
+        # ========================================
 
         print("Training agent...")
         from stable_baselines3.common.monitor import Monitor
 
-        callback_list = []
         # Define callbacks
+        callback_list = []
+
+        # Save model checkpoints
         checkpoint_callback = CheckpointCallback(
             save_freq=int(cfg.training.save_model_every / cfg.environment.n_envs),
             save_path=f"{agent.save_dir}/chkpts",
             name_prefix="ppo_model",
         )
 
-        print("creating eval env")
         eval_env = Monitor(HockeyEnv_SB3())
+
+        # Evaluate the agent every 1000 steps
         eval_callback = EvalCallback(
             eval_env,
             best_model_save_path=f"{agent.save_dir}/best_model/",
@@ -243,7 +258,6 @@ if __name__ == "__main__":
             progress_bar=False,
             callbacks=callback_list,
         )
-        # agent.save()
 
     if args.eval:
         print("Evaluating agent...")
@@ -267,38 +281,43 @@ if __name__ == "__main__":
         agent.load()
         print(f"==> Loaded main agent PPO from config: {args.config}")
 
+        EVAL_AGAINST_ALL = False  # Set to True to evaluate against all models
         # === ONLY ONE OPPONENT ===
+        if not EVAL_AGAINST_ALL:
+            print("==> Evaluating against a single opponent...")
+            # Pick an opponent
+            opponent = BasicOpponent(weak=False)
+            # opponent_cfg = "models/ppo/ppo_vanilla.yaml"
+            # opponent = load_ppo_agent(opponent_cfg)
+            # print("==> Loaded opponent:", opponent_cfg)
 
-        # # opponent = BasicOpponent(weak=False)
-        # opponent_cfg = "models/ppo/ppo_vanilla.yaml"
-        # opponent = load_ppo_agent(opponent_cfg)
-        # print("==> Loaded opponent:", opponent_cfg)
-
-        # agent.evaluate(
-        #     num_episodes=args.eval_episodes,
-        #     render_mode="human" if not args.no_render else "rgb_array",
-        #     opponent_right=opponent,
-        #     modes=["NORMAL"],  # "TRAIN_SHOOTING", "TRAIN_DEFENSE"
-        #     env=eval_env,
-        #     verbose=2,
-        # )
+            agent.evaluate(
+                num_episodes=args.eval_episodes,
+                render_mode="human" if not args.no_render else "rgb_array",
+                opponent_right=opponent,
+                modes=["NORMAL"],  # "TRAIN_SHOOTING", "TRAIN_DEFENSE"
+                env=eval_env,
+                verbose=2,
+            )
 
         # === ALL OPPONENTS ===
-        models = {}
-        models["basic_weak"] = BasicOpponent(weak=True)
-        models["basic_strong"] = BasicOpponent(weak=False)
-        models.update(load_all_sac_agents())
-        models.update(load_all_ppo_agents())
-        models.update(LoadTD7Agents())
+        if EVAL_AGAINST_ALL:
+            print("==> Evaluating against all models...")
+            models = {}
+            models["basic_weak"] = BasicOpponent(weak=True)
+            models["basic_strong"] = BasicOpponent(weak=False)
+            models.update(load_all_sac_agents())
+            models.update(load_all_ppo_agents())
+            models.update(LoadTD7Agents())
 
-        eval_against_all_models(
-            agent,
-            models,
-            eval_env,
-            agent_name=args.config,
-            num_episodes=args.eval_episodes,
-            render_mode="rgb_array",
-        )
+            eval_against_all_models(
+                agent,
+                models,
+                eval_env,
+                agent_name=args.config,
+                num_episodes=args.eval_episodes,
+                render_mode="rgb_array",
+            )
 
     if not args.train and not args.eval:
         print("No action specified. add --train or --eval to run the agent.")
