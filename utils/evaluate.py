@@ -1,5 +1,6 @@
 import hockey.hockey_env as h_env
 import numpy as np
+import pygame
 
 from henv.env import BasicOpponent
 
@@ -38,6 +39,11 @@ def eval_agent(
         print("No environment provided. Using HockeyEnv.")
         env = h_env.HockeyEnv_BasicOpponent()
 
+    if not pygame.display.get_init():
+        print("Reinitializing pygame display...")
+        pygame.display.init()
+        # env.screen = pygame.display.set_mode((800, 600))  # Adjust if needed
+
     if verbose > 0:
         print(f"==> {player_left=} VS {opponent_right} <==")
         # print(f"(weak={opponent_right.weak})")
@@ -53,6 +59,7 @@ def eval_agent(
         if mode_idx >= len(modes):
             mode_idx = len(modes) - 1
         mode = modes[mode_idx]
+
         obs, info = env.reset(mode=mode)  # Reset environment with the new mode
         # print(f"Starting Episode {episode + 1} in Mode: {mode}")
 
@@ -60,6 +67,11 @@ def eval_agent(
         episode_reward = 0
 
         while True:
+            if not pygame.display.get_init():
+                print("Reinitializing pygame display...")
+                pygame.display.init()
+                # env.screen = pygame.display.set_mode((800, 600))  # Adjust if needed
+
             env.render(mode=render_mode)
             a1, _ = player_left.predict(obs, deterministic=True)
             a2, _ = opponent_right.predict(obs_agent2, deterministic=True)

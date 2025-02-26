@@ -257,6 +257,7 @@ if __name__ == "__main__":
             load_all_sac_agents,
             load_ppo_agent,
         )
+        from utils.load import LoadTD7Agents
 
         WEAK = False
         eval_env = h_env.HockeyEnv_BasicOpponent(weak_opponent=WEAK)
@@ -268,7 +269,7 @@ if __name__ == "__main__":
 
         # === ONLY ONE OPPONENT ===
 
-        # # opponent = BasicOpponent(weak=WEAK)
+        # # opponent = BasicOpponent(weak=False)
         # opponent_cfg = "models/ppo/ppo_vanilla.yaml"
         # opponent = load_ppo_agent(opponent_cfg)
         # print("==> Loaded opponent:", opponent_cfg)
@@ -283,10 +284,12 @@ if __name__ == "__main__":
         # )
 
         # === ALL OPPONENTS ===
-        models = load_all_ppo_agents()
-        models.update(load_all_sac_agents())
+        models = {}
         models["basic_weak"] = BasicOpponent(weak=True)
         models["basic_strong"] = BasicOpponent(weak=False)
+        models.update(load_all_sac_agents())
+        models.update(load_all_ppo_agents())
+        models.update(LoadTD7Agents())
 
         eval_against_all_models(
             agent,
@@ -294,6 +297,7 @@ if __name__ == "__main__":
             eval_env,
             agent_name=args.config,
             num_episodes=args.eval_episodes,
+            render_mode="rgb_array",
         )
 
     if not args.train and not args.eval:

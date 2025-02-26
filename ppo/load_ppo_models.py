@@ -1,5 +1,9 @@
+import gc
+
+import hockey.hockey_env as h_env
 import matplotlib.pyplot as plt
 import pandas as pd
+import pygame
 
 from ppo.ppo import PPO_HockeyAgent
 from sac.sac import SAC_HockeyAgent
@@ -60,11 +64,11 @@ def load_all_sac_agents():
     sac_pink = SAC_HockeyAgent(eval_env, config=cfg)
     sac_pink.load("models/sac/sac_pink")
     models["sac_pink"] = sac_pink
-    
+
     sac_brown = SAC_HockeyAgent(eval_env, config=cfg)
     sac_brown.load("models/sac/sac_brown")
     models["sac_brown"] = sac_brown
-    
+
     sac_reward = SAC_HockeyAgent(eval_env, config=cfg)
     sac_reward.load("models/sac/sac_reward")
     models["sac_reward"] = sac_reward
@@ -72,8 +76,23 @@ def load_all_sac_agents():
     return models
 
 
+def reset_env():
+    """Fully resets Pygame and the environment to avoid rendering crashes."""
+    pygame.quit()  # Quit Pygame
+    pygame.display.quit()  # Close display
+    gc.collect()  # Force garbage collection to clear old envs
+    pygame.init()  # Reinitialize Pygame
+    pygame.display.init()  # Reinitialize display
+
+
 def eval_against_all_models(
-    agent, models, eval_env, agent_name, num_episodes=10, save_path=None
+    agent,
+    models,
+    eval_env,
+    agent_name,
+    num_episodes=10,
+    save_path=None,
+    render_mode="rgb_array",
 ):
     """
     Evaluate the agent against all saved models and plot Mean Reward with Std Error Bars
@@ -96,11 +115,18 @@ def eval_against_all_models(
     data = []
     for model_name, model in models.items():
         print(f"Evaluating {agent_name} VS {model_name}")
+
+        # Force-reset environment before switching opponents
+        eval_env.close()
+        eval_env = None
+        reset_env()  # Full reset of Pygame
+        eval_env = h_env.HockeyEnv_BasicOpponent()  # Create fresh environment
+
         info = agent.evaluate(
             verbose=0,
             num_episodes=num_episodes,
             opponent_right=model,
-            render_mode="rgb_array",
+            render_mode=render_mode,
             env=eval_env,
         )
         data.append(
@@ -159,16 +185,16 @@ def eval_against_all_models(
 
     # Background shading for Win Rate (green above 0.5, red below 0.5)
     ax1[1].axhspan(0.5, 1, facecolor="green", alpha=0.15)
-    ax1[1].axhspan(0, 0.5, facecolor="red", alpha=0.15)    
-    
+    ax1[1].axhspan(0, 0.5, facecolor="red", alpha=0.15)
+
     # Plot Win Rate as a bar chart
     bars = ax1[1].bar(x_positions, df["Win Rate"], color="orange", label="Win Rate")
-    
-    total=0
+
+    total = 0
     for bar in bars:
         height = bar.get_height()
         total += height
-    
+
     ax1[1].set_title(f"Win Rate {total}")
     ax1[1].set_ylabel("Win Rate")
     ax1[1].set_xticks(x_positions)
