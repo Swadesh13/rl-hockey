@@ -11,7 +11,7 @@ We presented both on- and off-policy solutions for this problem. In particular, 
 
 - Proximal Policy Optimization (PPO) [Vojtěch Sýkora]
 - Soft Actor-Critic (SAC) [Swadesh Jana]
-- Twin Delayed DDPG (TD3+4=TD7) [Jovan Cicvaric]
+- Twin Delayed DDPG (TD3+4=TD7) [Rojan Abolhassani]
 
 An extensive report containing detailed algorithm, modifications, and experiments descriptions can be found [here]().
 
