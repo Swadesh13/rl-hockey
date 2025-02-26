@@ -56,6 +56,19 @@ For league:
 python -m league.py --config configs/sac_hockey.yaml -q
 ```
 
+## TD7
+make sure you are in the top directory rl-hockey, for training a model run:
+
+```bash
+python -m td7.hockey_main --config configs/td7_hockey.yaml --train
+```
+for evaluation run:
+
+```bash
+python -m td7.hockey_main --config configs/td7_hockey.yaml --eval
+```
+You can choose the target to evaluate against in the configs/td7_hockey.yaml.
+
 ## Authors
 Vojtěch Sýkora, Rojan Abolhassani, Swadesh Jana
 
