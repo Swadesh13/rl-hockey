@@ -29,7 +29,7 @@ ALL_MODELS = {
     "basic_weak": BasicOpponent(weak=True),
 }
 ALL_MODELS.update(load_all_sac_agents())
-ALL_MODELS.update(LoadTD7Agents())
+# ALL_MODELS.update(LoadTD7Agents())
 ALL_MODELS.update(load_all_ppo_agents())
 
 
@@ -84,12 +84,6 @@ def train_against_many(
     # Initialize the PPO agent and load the starting model (e.g. your ppo_pp model)
     agent = PPO_HockeyAgent(env, config=cfg)
 
-    print()
-    print(f"\tVerbose: {agent.model.verbose}")
-    print(f"\tTensorboard log: {agent.model.tensorboard_log}")
-    print(f"\tSave directory: {agent.save_dir}")
-    print()
-
     if load == "yes":
         agent.load()
         agent.model.verbose = cfg.logging.verbose
@@ -108,7 +102,6 @@ def train_against_many(
 
     print()
     print(f"\tVerbose: {agent.model.verbose}")
-    print(f"\tTensorboard log: {agent.model.tensorboard_log}")
     print(f"\tSave directory: {agent.save_dir}")
     print()
 
@@ -133,7 +126,9 @@ def train_against_many(
         for cycle in range(num_iters):
             print(f"\n=== Cycle {cycle + 1} / {num_iters} ===")
             for opp_name, opp_model in opponent_dict.items():
-                print(f"\n--- Training against {opp_name} ---")
+                print(
+                    f"\n--- Training against {opp_name} for {timesteps_per_iter} steps ---"
+                )
                 agent.set_opponent(opp_model, opponent_name=opp_name)
                 agent.train(
                     total_timesteps=timesteps_per_iter,
@@ -153,7 +148,7 @@ def train_against_many(
                 get_eval_env(),
                 agent_name=args.config,
                 num_episodes=eval_episodes,
-                save_path=os.path.join(agent.save_dir, f"eval_round_{cycle}.png"),
+                save_path=os.path.join(agent.save_dir, f"eval_round_{cycle+1}.png"),
             )
 
     # Option 2: Random sampling training: each round picks a random opponent.
@@ -219,21 +214,21 @@ if __name__ == "__main__":
     opponent_dict["sac_reward"] = ALL_MODELS["sac_reward"]
     opponent_dict["sac_all_1"] = ALL_MODELS["sac_all_1"]
 
-    # TD7 OPPONENTS
-    opponent_dict["td7_plain"] = ALL_MODELS["td7_plain"]
-    opponent_dict["td7_puck_proximity"] = ALL_MODELS["td7_puck_proximity"]
-    opponent_dict["td7_offensive_pressure"] = ALL_MODELS["td7_offensive_pressure"]
-    opponent_dict["td7_offensive_pressure_puck_proximity"] = ALL_MODELS[
-        "td7_offensive_pressure_puck_proximity"
-    ]
-    opponent_dict["td7_all"] = ALL_MODELS["td7_all"]
-    opponent_dict["td7_offensive_pressure_self"] = ALL_MODELS[
-        "td7_offensive_pressure_self"
-    ]
-    opponent_dict["td7_all_big"] = ALL_MODELS["td7_all_big"]
-    opponent_dict["td7_all_new"] = ALL_MODELS["td7_all_new"]
-    opponent_dict["td7_all_offfensive"] = ALL_MODELS["td7_all_offfensive"]
-    opponent_dict["td7_crash"] = ALL_MODELS["td7_crash"]
+    # TD7 OPPONENTS (if you dont ahve GPU change the device to cpu in the td7 configs)
+    # opponent_dict["td7_plain"] = ALL_MODELS["td7_plain"]
+    # opponent_dict["td7_puck_proximity"] = ALL_MODELS["td7_puck_proximity"]
+    # opponent_dict["td7_offensive_pressure"] = ALL_MODELS["td7_offensive_pressure"]
+    # opponent_dict["td7_offensive_pressure_puck_proximity"] = ALL_MODELS[
+    #     "td7_offensive_pressure_puck_proximity"
+    # ]
+    # opponent_dict["td7_all"] = ALL_MODELS["td7_all"]
+    # opponent_dict["td7_offensive_pressure_self"] = ALL_MODELS[
+    #     "td7_offensive_pressure_self"
+    # ]
+    # opponent_dict["td7_all_big"] = ALL_MODELS["td7_all_big"]
+    # opponent_dict["td7_all_new"] = ALL_MODELS["td7_all_new"]
+    # opponent_dict["td7_all_offfensive"] = ALL_MODELS["td7_all_offfensive"]
+    # opponent_dict["td7_crash"] = ALL_MODELS["td7_crash"]
 
     # PPO OPPONENTS
     opponent_dict["ppo_vanilla"] = ALL_MODELS["ppo_vanilla"]
@@ -246,7 +241,7 @@ if __name__ == "__main__":
     train_against_many(
         opponent_dict,
         training_mode="stable",
-        num_iters=1000,
+        num_iters=40,
         timesteps_per_iter=250_000,
         load="yes",
         eval_episodes=50,

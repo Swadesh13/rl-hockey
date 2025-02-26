@@ -308,7 +308,7 @@ if __name__ == "__main__":
             models["basic_strong"] = BasicOpponent(weak=False)
             models.update(load_all_sac_agents())
             models.update(load_all_ppo_agents())
-            models.update(LoadTD7Agents())
+            # models.update(LoadTD7Agents())
 
             eval_against_all_models(
                 agent,

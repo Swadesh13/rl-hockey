@@ -105,7 +105,7 @@ def plot_tensorboard_data(
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.title(title)
+    # plt.title(title)
 
     if ylim:
         plt.ylim(ylim)  # Apply Y-axis limits if provided
@@ -115,6 +115,13 @@ def plot_tensorboard_data(
 
     # plt.legend(ncol=3, loc="lower right")
     plt.legend()
+
+    # sort legend labels
+    # handles, labels = plt.gca().get_legend_handles_labels()
+    # sorted_handles_labels = sorted(zip(handles, labels), key=lambda x: int(x[1]))
+    # sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+    # plt.legend(sorted_handles, sorted_labels, title="Parallel Envs", loc="best")
+
     plt.grid()
 
     # Save the plot if a path is provided
@@ -183,7 +190,7 @@ def plot_tensorboard_data_RND(
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.title(title)
+    # plt.title(title)
 
     if ylim:
         plt.ylim(ylim)
@@ -231,7 +238,7 @@ def plot_tensorboard_data_RND(
             [vanilla_handle],
             [vanilla_label],
             loc="center right",
-            bbox_to_anchor=(0.975, 0.36),
+            bbox_to_anchor=(0.975, 0.48),
         )
 
     plt.gca().add_artist(main_legend)  # Keep both legends active
@@ -277,20 +284,21 @@ custom_styles_rnd = {
     # "PPO_6": (palettes.tue_secondary[5], "e1_i0.1"),
     "PPO_13": (palettes.tue_secondary[5], "e1_i0.1"),
     # "PPO_5": (palettes.tue_secondary[6], "e1_i1"),
-    "PPO_14": (palettes.tue_secondary[6], "e1_i1"),
-    "PPO_9": (palettes.tue_secondary[7], "e1_i10"),
-    "PPO_8": (palettes.tue_secondary[8], "e10_i0.01"),
-    "PPO_11": (palettes.tue_secondary[11], "e10_i0.1"),
+    "PPO_14": (palettes.tue_secondary[8], "e1_i1"),
+    "PPO_9": (palettes.tue_secondary[11], "e1_i10"),
+    "PPO_8": (palettes.tue_secondary[6], "e10_i0.01"),
+    "PPO_11": (palettes.tue_secondary[7], "e10_i0.1"),
     "PPO_10": (palettes.tue_secondary[10], "e10_i1"),
     "PPO_7": (palettes.tue_secondary[9], "e10_i10"),
 }
 
 custom_styles_threerews = {
     "PPO_0": (palettes.tue_plot[-1], "ip+pp+op"),
-    "PPO_1": (palettes.tue_plot[0], "pp+op_G"),
+    "PPO_1": (palettes.tue_plot[2], "pp+op_G"),
     "PPO_2": (palettes.tue_plot[-3], "pp+op"),
     "PPO_3": (palettes.tue_plot[4], "pp_G"),
     "PPO_4": (palettes.tue_plot[1], "op_G"),
+    "PPO_op": (palettes.tue_primary[0], "op"),
 }
 
 custom_styles_rew_mult2 = {
@@ -303,9 +311,9 @@ custom_styles_rew_mult2 = {
 }
 
 custom_styles_rnd_parallel = {
-    "PPO_0": (palettes.tue_plot[0], "64"),
+    "PPO_2": (palettes.tue_plot[0], "32"),
+    "PPO_0": (palettes.tue_plot[2], "64"),
     "PPO_1": (palettes.tue_plot[1], "128"),
-    "PPO_2": (palettes.tue_plot[2], "32"),
     "PPO_3": (palettes.tue_plot[3], "256"),
 }
 
@@ -320,7 +328,7 @@ if __name__ == "__main__":
     #     title="Effect of Different Noise Types on PPO Performance",
     #     ylim=(-2.5, 10),  # Restrict Y-axis range
     #     save_path="utils/plots/ppo_noises.png",  # Save the plot instead of showing it
-    #     figsize=(12, 4),
+    #     figsize=(12, 2),
     # )
 
     # plot_tensorboard_data_RND(
@@ -330,10 +338,10 @@ if __name__ == "__main__":
     #     xlabel="Number of Training Steps",
     #     ylabel="Smoothed Mean Reward",
     #     title="Effect of RND on PPO Performance",
-    #     # ylim=(-20, 12),
+    #     ylim=(-15, 11),
     #     # xlim=(2e7, 3e7),
     #     save_path="utils/plots/ppo_rnd.png",  # Save the plot instead of showing it
-    #     figsize=(12, 4),
+    #     figsize=(12, 3),
     # )
 
     # plot_tensorboard_data(
@@ -343,10 +351,10 @@ if __name__ == "__main__":
     #     xlabel="Number of Training Steps",
     #     ylabel="Smoothed Mean Reward",
     #     title="Effect of Multiple Reward and Noise Combination on PPO Performance",
-    #     # ylim=(-15, 12),
+    #     ylim=(-5, 11),
     #     # xlim=(0, 2e7),
     #     save_path="utils/plots/ppo_3rews.png",  # Save the plot instead of showing it
-    #     figsize=(12, 4),
+    #     figsize=(12, 3),
     # )
 
     # plot_tensorboard_data(
@@ -369,10 +377,10 @@ if __name__ == "__main__":
     #     xlabel="Number of Training Steps",
     #     ylabel="Smoothed Mean Reward",
     #     title="Effect of Number of Parallel Environments on PPO RND Performance",
-    #     # ylim=(-15, 12),
+    #     ylim=(-5, 11),
     #     # xlim=(0, 2e7),
     #     save_path="utils/plots/ppo_rnd_parallel.png",  # Save the plot instead of showing it
-    #     figsize=(12, 4),
+    #     figsize=(12, 2),
     # )
 
     plot_tensorboard_data(
@@ -382,8 +390,8 @@ if __name__ == "__main__":
         xlabel="Number of Training Steps",
         ylabel="Smoothed Mean Reward",
         title="Effect of Different Rewards on PPO Performance",
-        ylim=(-10, 12),
+        ylim=(-7.5, 11),
         # xlim=(0, 2e7),
         save_path="utils/plots/ppo_rewards5.png",  # Save the plot instead of showing it
-        figsize=(12, 4),
+        figsize=(12, 3),
     )

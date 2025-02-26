@@ -53,7 +53,9 @@ def eval_agent(
     win_counts = {"Agent Wins": 0, "Opponent Wins": 0, "Draws": 0}
     episodes_per_mode = num_episodes // len(modes)
 
-    print(f"Running {num_episodes} episodes in {modes} modes...")
+    if verbose > 0:
+        print(f"Running {num_episodes} episodes in {modes} modes...")
+
     for episode in range(num_episodes):
         # Determine the mode based on the episode range
         mode_idx = episode // episodes_per_mode
