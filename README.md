@@ -13,7 +13,7 @@ We presented both on- and off-policy solutions for this problem. In particular, 
 - Soft Actor-Critic (SAC) [Swadesh Jana]
 - Twin Delayed DDPG (TD3+4=TD7) [Rojan Abolhassani]
 
-An extensive report containing detailed algorithm, modifications, and experiments descriptions can be found [here]().
+An extensive report containing detailed algorithm, modifications, and experiments descriptions can be found [here](assets/RL_Project_2025.pdf).
 
 ## Getting Started
 
